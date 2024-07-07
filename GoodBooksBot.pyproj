@@ -45,6 +45,9 @@
     <Content Include=".env">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="anonymous_messages.json">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="templates\add_book.html" />
     <Content Include="templates\edit_book.html" />
     <Content Include="requirements.txt" />
