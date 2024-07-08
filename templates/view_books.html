@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Books Catalog</title>
+    <title>Каталог книг</title>
     <style>
         table {
             width: 100%;
@@ -17,12 +17,12 @@
     </style>
 </head>
 <body>
-    <h2>Books Catalog</h2>
+    <h2>Каталог книг</h2>
     <div>
         <form action="/search" method="get">
-            <label for="search_query">Search:</label>
-            <input type="text" id="search_query" name="query" placeholder="Enter title...">
-            <button type="submit">Search</button>
+            <label for="search_query">Поиск:</label>
+            <input type="text" id="search_query" name="query" placeholder="Введите название...">
+            <button type="submit">Найти</button>
         </form>
     </div>
     <br>
@@ -30,10 +30,13 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Genre</th>
-                <th>Actions</th>
+                <th>Название</th>
+                <th>Автор</th>
+                <th>Жанр</th>
+                <th>Цена</th>
+                <th>Изображение</th>
+                <th>Наличие</th>
+                <th>Действия</th>
             </tr>
         </thead>
         <tbody>
@@ -43,9 +46,12 @@
                 <td>{{ book.title }}</td>
                 <td>{{ book.author }}</td>
                 <td>{{ book.genre }}</td>
+                <td>{{ book.price }}</td>
+                <td><img src="{{ book.image_url }}" alt="Обложка книги" style="max-height: 100px;"></td>
+                <td>{{ book.availability }}</td>
                 <td>
-                    <a href="/edit_book/{{ book.id }}">Edit</a> |
-                    <a href="/delete_book/{{ book.id }}">Delete</a>
+                    <a href="/edit_book/{{ book.id }}">Изменить</a> |
+                    <a href="/delete_book/{{ book.id }}">Удалить</a>
                 </td>
             </tr>
             {% endfor %}
@@ -53,7 +59,7 @@
     </table>
     <br>
     <div>
-        <a href="/add_book">Add New Book</a>
+        <a href="/add_book">Добавить новую книгу</a>
     </div>
 </body>
 </html>

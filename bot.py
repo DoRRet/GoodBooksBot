@@ -1,13 +1,17 @@
-﻿import requests
+import requests
 import json
+import os
+from dotenv import load_dotenv
 from telegram.ext import Updater
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
 Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 )
-import os
 
-TOKEN = '7012177270:AAHVn0WARbchPLZO1lmg4ixPv0HltXIO-ME'
+# Load environment variables from .env file
+load_dotenv()
+
+TOKEN = os.getenv('TOKEN')
 API_URL = 'https://leolorenco.pythonanywhere.com/search'
 ADMIN_CHAT_ID = 6984945831
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
@@ -70,7 +74,7 @@ async def start(update: Update, context: CallbackContext):
         f"Если у вас есть вопросы или предложения, обратитесь к администратору.\n"
         f"Администратор: @biblioteka_gb"
     )
-    
+
     keyboard = [
         [
             InlineKeyboardButton("Предложка", callback_data='suggest'),
@@ -351,14 +355,14 @@ def main():
     application.add_handler(CommandHandler("clearanonall", clear_anonymous_messages))  # Команда для очистки всех анонимных сообщений
     application.add_handler(CommandHandler("clearanon", clear_one_anonymous_message))  # Команда для удаления одного анонимного сообщения
     application.add_handler(CallbackQueryHandler(button_callback))
-    
+
     application.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.PRIVATE & ~filters.User(ADMIN_CHAT_ID), 
+        filters.TEXT & filters.ChatType.PRIVATE & ~filters.User(ADMIN_CHAT_ID),
         handle_message
     ))
-    
+
     application.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID), 
+        filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
         handle_admin_message
     ))
 

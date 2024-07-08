@@ -1,20 +1,82 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Book</title>
+    <title>Добавление книги</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 20px;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"], select {
+            width: calc(100% - 12px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: url('data:image/svg+xml;utf8,<svg fill="#333" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><polygon points="0,5 10,15 20,5"></polygon></svg>') no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 12px;
+            padding-right: 30px;
+            text-indent: 0.01px;
+            text-overflow: '';
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h2>Add a New Book</h2>
+    <h2>Добавление новой книги</h2>
     <form action="/add_book" method="post">
-        <label>Title:</label><br>
+        <label>Название:</label><br>
         <input type="text" name="title" required><br><br>
-        <label>Author:</label><br>
-        <input type="text" name="author" required><br><br>
-        <label>Genre:</label><br>
-        <input type="text" name="genre" required><br><br>
-        <input type="submit" value="Add Book">
+        <label>Цена:</label><br>
+        <input type="text" name="price" required><br><br>
+        <label>Изображение:</label><br>
+        <input type="text" name="image_url" required><br><br>
+        <label>Наличие:</label><br>
+        <select name="availability" required>
+            <option value="available">В наличии</option>
+            <option value="out_of_stock">Нет в наличии</option>
+        </select><br><br>
+        <input type="submit" value="Добавить книгу">
     </form>
 </body>
 </html>
