@@ -3,13 +3,13 @@ import json
 from telegram.ext import Updater
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
+Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 )
 import os
 
 TOKEN = '7012177270:AAHVn0WARbchPLZO1lmg4ixPv0HltXIO-ME'
 API_URL = 'https://leolorenco.pythonanywhere.com/search'
-ADMIN_CHAT_ID = 808174847
+ADMIN_CHAT_ID = 6984945831
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
 active_dialogs = {}  # Словарь для хранения активных диалогов
 message_history = {}  # Словарь для хранения истории сообщений
