@@ -1,0 +1,72 @@
+[33mcommit f22f24594476af6a171b445d8f739244c0274c79[m[33m ([m[1;36mHEAD -> [m[1;32mnew-branch-name[m[33m, [m[1;31morigin/new-branch-name[m[33m)[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 19:40:33 2024 +0000
+
+    Хуета
+
+[33mcommit df2f33d90d21b7a8b73df4ea36a16001f1edde08[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 19:18:06 2024 +0000
+
+    Forcefully removed GoodBooksBot from index
+
+[33mcommit e01c491ba0d6d281a7d45a41ea039a11e1cb12a5[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 19:03:25 2024 +0000
+
+    Сайт обновлен поиск работает база обновлена
+
+[33mcommit faee14456b9502adcbaa00c924229e5e9eaadab5[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 11:33:16 2024 +0400
+
+    Загружены файлы с сайта, готово к облачному сервису
+
+[33mcommit a8a9bd2f00292422c2dbb725f4c6f78b6edd0ee3[m
+Merge: 349845b cf0cf92
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 02:23:30 2024 +0400
+
+    Merge branch 'master' of https://github.com/DoRRet/GoodBooksBot
+
+[33mcommit 349845b0ad4aca3fa140c8ea87053800ffea2069[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Mon Jul 8 02:22:47 2024 +0400
+
+    Анонимные соо работают
+
+[33mcommit cf0cf9201af370105610ff5f3c73294c72198efe[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Mre <100142591+DoRRet@users.noreply.github.com>
+Date:   Sun Jul 7 22:31:33 2024 +0400
+
+    Create README.md
+
+[33mcommit 78321c696aad90a528e2b9b2b707aef43d37b0b6[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Sun Jul 7 22:30:48 2024 +0400
+
+    История сохраняется после перезапуска
+
+[33mcommit 92d8e645ee2cdb31cf4560c67e4ba97ae1809753[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Sun Jul 7 15:48:29 2024 +0400
+
+    app config обновлены с сайта
+
+[33mcommit 37a6a585e607cad7dd1ebc63112dd6b11e9f3fdf[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Sun Jul 7 15:41:23 2024 +0400
+
+    Бот работает, подключен к сайту. Только поиск
+
+[33mcommit 9dd5f7652b41cfd54825d9bd20a2889b4f453013[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Sat Jul 6 21:04:49 2024 +0400
+
+    Все файлы добавлены
+
+[33mcommit 2fd5324fddf076d52ab87791f31e68e632b01696[m
+Author: DoRRet <fekl.3@yandex.ru>
+Date:   Sat Jul 6 20:52:57 2024 +0400
+
+    Add initial database file

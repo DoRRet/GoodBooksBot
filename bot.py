@@ -13,13 +13,15 @@ load_dotenv()
 
 TOKEN = os.getenv('TOKEN')
 API_URL = 'https://leolorenco.pythonanywhere.com/search'
-ADMIN_CHAT_ID = 6984945831
+ADMIN_CHAT_ID = 808174847
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
 active_dialogs = {}  # Словарь для хранения активных диалогов
 message_history = {}  # Словарь для хранения истории сообщений
+suggestions = {}  # Словарь для хранения предложений
 anonymous_messages = []  # Список для хранения анонимных сообщений
 HISTORY_FILE = 'message_history.json'
 ANON_FILE = 'anonymous_messages.json'
+SUGGESTIONS_FILE = 'suggestions.json'
 
 def load_message_history():
     global message_history
@@ -66,6 +68,30 @@ def save_anonymous_messages():
         print("Анонимные сообщения сохранены.")
     except IOError as e:
         print(f"Ошибка при записи файла {ANON_FILE}: {e}")
+
+def load_suggestions():
+    global suggestions
+    try:
+        if os.path.exists(SUGGESTIONS_FILE):
+            with open(SUGGESTIONS_FILE, 'r', encoding='utf-8') as file:
+                loaded_suggestions = json.load(file)
+                for key, value in loaded_suggestions.items():
+                    suggestions[int(key)] = value
+                print("Предложения загружены.")
+        else:
+            print(f"Файл {SUGGESTIONS_FILE} не найден.")
+    except FileNotFoundError:
+        print(f"Файл {SUGGESTIONS_FILE} не найден.")
+    except json.JSONDecodeError as e:
+        print(f"Ошибка декодирования JSON в файле {SUGGESTIONS_FILE}: {e}")
+
+def save_suggestions():
+    try:
+        with open(SUGGESTIONS_FILE, 'w', encoding='utf-8') as file:
+            json.dump({str(key): value for key, value in suggestions.items()}, file, ensure_ascii=False, indent=4)
+        print("Предложения сохранены.")
+    except IOError as e:
+        print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
 
 async def start(update: Update, context: CallbackContext):
     user = update.message.from_user
@@ -138,6 +164,12 @@ async def handle_message(update: Update, context: CallbackContext):
             suggestion = update.message.text.strip()
             await update.message.reply_text("Ваше предложение отправлено.")
             await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Предложение от @{user_name} ({user_id}): {suggestion}")
+
+            # Сохранение предложения в словарь
+            if user_id not in suggestions:
+                suggestions[user_id] = []
+            suggestions[user_id].append({'from': user_name, 'text': suggestion})
+            save_suggestions()  # Сохранение предложений в файл
             del context.user_data['awaiting_suggestion']
 
         elif context.user_data.get('awaiting_anonymous_suggestion'):
@@ -208,8 +240,49 @@ async def show_help(update: Update, context: CallbackContext):
         "/anon - Показать анонимные сообщения\n"
         "/clearanonall - Очистить все анонимные сообщения\n"
         "/clearanon <номер> - Удалить одно анонимное сообщение по номеру\n"
+        "/predl - Показать все предложения\n"
+        "/clearpredl - Очистить все предложения\n"
+        "/clearpredl <user_id> - Очистить историю предложений пользователя\n"
     )
     await update.message.reply_text(help_message)
+
+async def show_suggestions(update: Update, context: CallbackContext):
+    if update.message.from_user.id != ADMIN_CHAT_ID:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
+        return
+
+    if suggestions:
+        suggestions_message = "\n\n".join([f"Пользователь {user_id} (@{suggestion['from']}): {suggestion['text']}"
+                                           for user_id, user_suggestions in suggestions.items()
+                                           for suggestion in user_suggestions])
+        await update.message.reply_text(f"Предложения:\n{suggestions_message}")
+    else:
+        await update.message.reply_text("Предложений нет.")
+
+async def clear_all_suggestions(update: Update, context: CallbackContext):
+    if update.message.from_user.id != ADMIN_CHAT_ID:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
+        return
+
+    suggestions.clear()
+    save_suggestions()
+    await update.message.reply_text("Все предложения очищены.")
+
+async def clear_user_suggestions(update: Update, context: CallbackContext):
+    if update.message.from_user.id != ADMIN_CHAT_ID:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
+        return
+
+    try:
+        user_id = int(context.args[0])
+        if user_id in suggestions:
+            del suggestions[user_id]
+            save_suggestions()
+            await update.message.reply_text(f"История предложений пользователя {user_id} очищена.")
+        else:
+            await update.message.reply_text("История предложений с этим пользователем не найдена.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
 
 async def show_users(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
@@ -342,6 +415,7 @@ def main():
     global message_history
     load_message_history()  # Загружаем историю сообщений
     load_anonymous_messages()  # Загружаем анонимные сообщения
+    load_suggestions()  # Загружаем предложения
 
     application = Application.builder().token(TOKEN).build()
 
@@ -354,6 +428,9 @@ def main():
     application.add_handler(CommandHandler("anon", show_anonymous_messages))  # Команда для показа анонимных сообщений
     application.add_handler(CommandHandler("clearanonall", clear_anonymous_messages))  # Команда для очистки всех анонимных сообщений
     application.add_handler(CommandHandler("clearanon", clear_one_anonymous_message))  # Команда для удаления одного анонимного сообщения
+    application.add_handler(CommandHandler("predl", show_suggestions))  # Команда для показа предложений
+    application.add_handler(CommandHandler("clearpredl", clear_all_suggestions))  # Команда для очистки всех предложений
+    application.add_handler(CommandHandler("clearpredl", clear_user_suggestions))  # Команда для очистки предложений пользователя
     application.add_handler(CallbackQueryHandler(button_callback))
 
     application.add_handler(MessageHandler(
