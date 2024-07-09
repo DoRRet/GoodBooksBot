@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import sqlite3
 from dotenv import load_dotenv
 from telegram.ext import Updater
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -12,7 +13,6 @@ Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandl
 load_dotenv()
 
 TOKEN = os.getenv('TOKEN')
-API_URL = 'https://leolorenco.pythonanywhere.com/search'
 ADMIN_CHAT_ID = 808174847
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
 active_dialogs = {}  # Словарь для хранения активных диалогов
@@ -108,6 +108,22 @@ async def start(update: Update, context: CallbackContext):
 
     await show_main_menu(update, context)  # Показываем главное меню
 
+async def show_main_menu(update: Update, context: CallbackContext):
+    keyboard = [
+        [InlineKeyboardButton("Предложка", callback_data='suggest')],
+        [InlineKeyboardButton("Связаться с администратором", callback_data='call_admin')],
+        [InlineKeyboardButton("Поиск книги", callback_data='search_book')],
+        [InlineKeyboardButton("Анонимное предложение/жалоба", callback_data='anonymous_suggestion')],
+        [InlineKeyboardButton("Активные диалоги", callback_data='show_active_dialogs')],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    if update.callback_query:
+        await update.callback_query.message.edit_text("Выберите действие:", reply_markup=reply_markup)
+    else:
+        await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
+
 async def button_callback(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -121,6 +137,7 @@ async def button_callback(update: Update, context: CallbackContext):
         await query.edit_message_text("Администратор будет оповещен о вашем запросе. Пожалуйста, отправьте ваше сообщение.",
                                       reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]]))
         context.user_data['awaiting_admin_message'] = True
+        active_dialogs[query.from_user.id] = True  # Добавляем пользователя в список активных диалогов
 
     elif query.data == 'search_book':
         await query.edit_message_text("Вы выбрали 'Поиск книги'. Отправьте название книги для поиска.",
@@ -138,7 +155,7 @@ async def button_callback(update: Update, context: CallbackContext):
 
     elif query.data == 'back_to_main_menu':
         context.user_data.clear()  # Очистить все состояния пользователя
-        await start(update, context)  # Возвращаемся в главное меню
+        await show_main_menu(update, context)  # Возвращаемся в главное меню
 
 async def handle_message(update: Update, context: CallbackContext):
     user = update.message.from_user
@@ -154,26 +171,45 @@ async def handle_message(update: Update, context: CallbackContext):
     message_history[user.id].append({"from": "user", "text": text})
     save_message_history()
 
+    # Добавляем пользователя в список активных диалогов
+    active_dialogs[user.id] = True
+
     if context.user_data.get('awaiting_suggestion'):
-        # Обработка предложения
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое предложение от {user.username}:\n{text}")
         await update.message.reply_text("Спасибо за ваше предложение!")
         context.user_data['awaiting_suggestion'] = False
 
     elif context.user_data.get('awaiting_admin_message'):
-        # Обработка сообщения администратору
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое сообщение для админа от {user.username}:\n{text}")
         await update.message.reply_text("Ваше сообщение отправлено администратору.")
         context.user_data['awaiting_admin_message'] = False
-        active_dialogs[user.id] = True  # Добавляем пользователя в список активных диалогов
 
     elif context.user_data.get('awaiting_search_query'):
-        # Обработка поиска книги
-        await search_books(update, context, text)  # Ваша функция для поиска книг
-        context.user_data['awaiting_search_query'] = False
+        books = search_books(text)
+        if books:
+            for book in books:
+                buttons = [[InlineKeyboardButton(f"Купить книгу {book['id']}", url=f"tg://user?id={ADMIN_CHAT_ID}")]]
+                reply_markup = InlineKeyboardMarkup(buttons)
+                if book["image_url"]:
+                    await context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=book["image_url"],
+                        caption=f"Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}",
+                        reply_markup=reply_markup
+                    )
+                else:
+                    await context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f"Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}\n(Фото отсутствует)",
+                        reply_markup=reply_markup
+                    )
+        else:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Книги не найдены."
+            )
 
     elif context.user_data.get('awaiting_anonymous_suggestion'):
-        # Обработка анонимного предложения/жалобы
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Анонимное предложение/жалоба:\n{text}")
         await update.message.reply_text("Ваше сообщение отправлено анонимно.")
         context.user_data['awaiting_anonymous_suggestion'] = False
@@ -406,11 +442,32 @@ async def clear_one_anonymous_message(update: Update, context: CallbackContext):
 
 def search_books(query):
     try:
-        response = requests.get(API_URL, params={'query': query})
-        response.raise_for_status()
-        books = response.json().get('books', [])
+        conn = sqlite3.connect('books.db')
+        cursor = conn.cursor()
+
+        # Приводим запрос и название книги к нижнему регистру для сравнения
+        query = f"%{query.lower()}%"
+        cursor.execute("""
+            SELECT id, title, price, image_url, availability
+            FROM Book
+            WHERE LOWER(title) LIKE ?
+        """, (query,))
+
+        rows = cursor.fetchall()
+
+        books = []
+        for row in rows:
+            books.append({
+                "id": row[0],
+                "title": row[1],
+                "price": row[2],
+                "image_url": row[3],
+                "availability": row[4]
+            })
+
+        conn.close()
         return books
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         print(f"Error fetching books: {e}")
         return []
 

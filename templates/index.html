@@ -83,14 +83,9 @@
         <a href="/add_book">Добавить новую книгу</a>
     </div>
     <form method="POST" action="/">
-    <label>Выберите столбцы для поиска:</label><br>
-    <input type="checkbox" name="columns" value="title" checked> Название
-    <input type="checkbox" name="columns" value="price"> Цена
-    <input type="checkbox" name="columns" value="availability"> Доступность
-    <input type="checkbox" name="columns" value="image_url"> Обложка<br>
-    <input type="text" name="query" placeholder="Поиск книги...">
-    <button type="submit">Поиск</button>
-</form>
+        <input type="text" name="query" placeholder="Поиск книги...">
+        <button type="submit">Поиск</button>
+    </form>
     {% if books %}
         <div class="search-results">
             Найдено книг: {{ books|length }}
@@ -115,7 +110,9 @@
                     <td class="action-links">
                         <a href="/edit_book/{{ book.id }}">Редактировать</a>
                         <span>|</span>
-                        <a href="/delete_book/{{ book.id }}">Удалить</a>
+                        <form action="/delete_book/{{ book.id }}" method="POST">
+                            <button type="submit">Удалить</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
