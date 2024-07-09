@@ -119,22 +119,20 @@ async def send_welcome_message(update, context, user):
     )
     await context.bot.send_message(chat_id=update.effective_chat.id, text=welcome_text)
 
-async def show_main_menu(update, context):
-    keyboard = [
+async def show_main_menu(update: Update, context: CallbackContext):
+    buttons = [
         [InlineKeyboardButton("Предложка", callback_data='suggest')],
-        [InlineKeyboardButton("Связаться с администратором", callback_data='call_admin')],
         [InlineKeyboardButton("Поиск книги", callback_data='search_book')],
+        [InlineKeyboardButton("Сообщение администратору", callback_data='call_admin')],
         [InlineKeyboardButton("Анонимное предложение/жалоба", callback_data='anonymous_suggestion')],
         [InlineKeyboardButton("Активные диалоги", callback_data='show_active_dialogs')],
     ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    message_text = "**Выберите действие:**"
+    reply_markup = InlineKeyboardMarkup(buttons)
 
     if update.callback_query:
-        await update.callback_query.message.edit_text(message_text, reply_markup=reply_markup, parse_mode='Markdown')
+        await update.callback_query.edit_message_text("Главное меню", reply_markup=reply_markup)
     else:
-        await update.message.reply_text(message_text, reply_markup=reply_markup, parse_mode='Markdown')
+        await update.message.reply_text("Главное меню", reply_markup=reply_markup)
 
 async def button_callback(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -181,28 +179,37 @@ async def handle_message(update: Update, context: CallbackContext):
     if context.user_data.get('awaiting_search_query'):
         books = search_books(text)
         if books:
-            for book in books:
-                buttons = [[InlineKeyboardButton(f"Купить книгу {book['id']}", url=f"tg://user?id={ADMIN_CHAT_ID}")]]
+            for index, book in enumerate(books, start=1):
+                buttons = [
+                    [InlineKeyboardButton(f"Купить книгу {index}", url=f"tg://user?id={ADMIN_CHAT_ID}")]
+                ]
                 reply_markup = InlineKeyboardMarkup(buttons)
                 if book["image_url"]:
                     await context.bot.send_photo(
                         chat_id=update.effective_chat.id,
                         photo=book["image_url"],
-                        caption=f"Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}",
+                        caption=f"{index}. Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}",
                         reply_markup=reply_markup
                     )
                 else:
                     await context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f"Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}\n(Фото отсутствует)",
+                        text=f"{index}. Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}\n(Фото отсутствует)",
                         reply_markup=reply_markup
                     )
+            # Добавляем кнопку "Назад" после вывода всех книг
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Вернуться в главное меню",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
+            )
         else:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Книги не найдены."
+                text="Книги не найдены.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
             )
-        # Не сохраняем сообщение в истории, но продолжаем ожидать следующий запрос на поиск книги.
+        context.user_data['awaiting_search_query'] = False
         return
 
     if user.id not in message_history:
