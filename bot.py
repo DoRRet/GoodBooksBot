@@ -3,6 +3,7 @@ import requests
 import json
 import os
 import sqlite3
+import telegram
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
@@ -68,7 +69,7 @@ def load_anonymous_messages():
 
 def save_anonymous_messages():
     try:
-        with open(ANON_FILE, 'r', encoding='utf-8-sig') as file:  # Используем 'utf-8-sig' для игнорирования BOM
+        with open(ANON_FILE, 'w', encoding='utf-8-sig') as file:  # Изменение 'r' на 'w'
             json.dump(anonymous_messages, file, ensure_ascii=False, indent=4)
         print("Анонимные сообщения сохранены.")
     except IOError as e:
@@ -184,17 +185,24 @@ async def handle_message(update: Update, context: CallbackContext):
                     [InlineKeyboardButton(f"Купить книгу {index}", url=f"tg://user?id={ADMIN_CHAT_ID}")]
                 ]
                 reply_markup = InlineKeyboardMarkup(buttons)
-                if book["image_url"]:
-                    await context.bot.send_photo(
-                        chat_id=update.effective_chat.id,
-                        photo=book["image_url"],
-                        caption=f"{index}. Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}",
-                        reply_markup=reply_markup
-                    )
-                else:
+                try:
+                    if book["image_url"]:
+                        await context.bot.send_photo(
+                            chat_id=update.effective_chat.id,
+                            photo=book["image_url"],
+                            caption=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}",
+                            reply_markup=reply_markup
+                        )
+                    else:
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото отсутствует)",
+                            reply_markup=reply_markup
+                        )
+                except telegram.error.BadRequest as e:
                     await context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f"{index}. Название: {book['title']}\nЦена: {book['price']}\nНаличие: {book['availability']}\n(Фото отсутствует)",
+                        text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото не найдено)",
                         reply_markup=reply_markup
                     )
             # Добавляем кнопку "Назад" после вывода всех книг
@@ -477,40 +485,52 @@ SEARCH_BOOK = 1
 # Операции с базой данных книг
 def search_books(query):
     try:
+        print("Connecting to the database 'books.db'...")
         conn = sqlite3.connect('books.db')
         cursor = conn.cursor()
+        print("Connected successfully.")
 
-        # Print the query being executed
-        print(f"Executing query: {query}")
+        print(f"Original query: {query}")
+        formatted_query = f"%{query.upper()}%"
+        print(f"Formatted query for SQL LIKE: {formatted_query}")
 
-        # Execute the SQL query
-        query = f"%{query.lower()}%"
+        print("Executing SQL query...")
         cursor.execute("""
             SELECT id, title, price, image_url, availability
             FROM Book
-            WHERE LOWER(title) LIKE ?
-        """, (query,))
+            WHERE UPPER(title) LIKE ?
+        """, (formatted_query,))
+        print("SQL query executed successfully.")
 
+        print("Fetching results from the database...")
         rows = cursor.fetchall()
         print(f"Found {len(rows)} books matching the query.")
+        
+        for idx, row in enumerate(rows):
+            print(f"Row {idx}: {row}")
 
+        print("Processing rows into book dictionary format...")
         books = []
         for row in rows:
-            books.append({
+            book = {
                 "id": row[0],
                 "title": row[1],
                 "price": row[2],
                 "image_url": row[3],
                 "availability": row[4]
-            })
+            }
+            print(f"Processed book: {book}")
+            books.append(book)
 
+        print("Closing the database connection...")
         conn.close()
+        print("Connection closed.")
+
+        print("Returning the list of books.")
         return books
     except Exception as e:
         print(f"Error fetching books: {e}")
         return []
-
-
 
 
 # Основная функция запуска бота
