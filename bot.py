@@ -36,9 +36,7 @@ def load_message_history():
     try:
         if os.path.exists(HISTORY_FILE):
             with open(HISTORY_FILE, 'r', encoding='utf-8') as file:
-                loaded_history = json.load(file)
-                for key, value in loaded_history.items():
-                    message_history[int(key)] = value
+                message_history = json.load(file)
                 print("История сообщений загружена.")
         else:
             print(f"Файл {HISTORY_FILE} не найден.")
@@ -47,10 +45,11 @@ def load_message_history():
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {HISTORY_FILE}: {e}")
 
+# Сохранение истории сообщений
 def save_message_history():
     try:
         with open(HISTORY_FILE, 'w', encoding='utf-8') as file:
-            json.dump({str(key): value for key, value in message_history.items()}, file, ensure_ascii=False, indent=4)
+            json.dump(message_history, file, ensure_ascii=False, indent=4)
         print("История сообщений сохранена.")
     except IOError as e:
         print(f"Ошибка при записи файла {HISTORY_FILE}: {e}")
@@ -59,7 +58,7 @@ def load_anonymous_messages():
     global anonymous_messages
     try:
         if os.path.exists(ANON_FILE):
-            with open(ANON_FILE, 'r', encoding='utf-8-sig') as file:  # Используем 'utf-8-sig' для игнорирования BOM
+            with open(ANON_FILE, 'r', encoding='utf-8') as file:
                 anonymous_messages = json.load(file)
                 print("Анонимные сообщения загружены.")
         else:
@@ -69,9 +68,10 @@ def load_anonymous_messages():
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {ANON_FILE}: {e}")
 
+# Сохранение анонимных сообщений
 def save_anonymous_messages():
     try:
-        with open(ANON_FILE, 'w', encoding='utf-8-sig') as file:  # Изменение 'r' на 'w'
+        with open(ANON_FILE, 'w', encoding='utf-8') as file:
             json.dump(anonymous_messages, file, ensure_ascii=False, indent=4)
         print("Анонимные сообщения сохранены.")
     except IOError as e:
@@ -82,9 +82,7 @@ def load_suggestions():
     try:
         if os.path.exists(SUGGESTIONS_FILE):
             with open(SUGGESTIONS_FILE, 'r', encoding='utf-8') as file:
-                loaded_suggestions = json.load(file)
-                for key, value in loaded_suggestions.items():
-                    suggestions[int(key)] = value
+                suggestions = json.load(file)
                 print("Предложения загружены.")
         else:
             print(f"Файл {SUGGESTIONS_FILE} не найден.")
@@ -93,10 +91,11 @@ def load_suggestions():
     except json.JSONDecodeError as e:
         print(f"Ошибка декодирования JSON в файле {SUGGESTIONS_FILE}: {e}")
 
+# Сохранение предложений
 def save_suggestions():
     try:
         with open(SUGGESTIONS_FILE, 'w', encoding='utf-8') as file:
-            json.dump({str(key): value for key, value in suggestions.items()}, file, ensure_ascii=False, indent=4)
+            json.dump(suggestions, file, ensure_ascii=False, indent=4)
         print("Предложения сохранены.")
     except IOError as e:
         print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
@@ -230,7 +229,6 @@ async def handle_message(update: Update, context: CallbackContext):
         context.user_data['awaiting_search_query'] = False
         return
 
-    # Условия для записи сообщений пользователя
     if user.id in is_recording_user and is_recording_user[user.id]:
         if user.id not in message_history:
             message_history[user.id] = []
@@ -240,17 +238,26 @@ async def handle_message(update: Update, context: CallbackContext):
     active_dialogs[user.id] = True
 
     if context.user_data.get('awaiting_suggestion'):
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое предложение от {user.username}:\n{text}")
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=f"Новое предложение от пользователя @{user.username} (ID: {user.id}):\n{text}"
+        )
         await update.message.reply_text("Спасибо за ваше предложение!")
         context.user_data['awaiting_suggestion'] = False
 
     elif context.user_data.get('awaiting_admin_message'):
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое сообщение для админа от {user.username}:\n{text}")
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=f"Новое сообщение для админа от пользователя @{user.username} (ID: {user.id}):\n{text}"
+        )
         await update.message.reply_text("Ваше сообщение отправлено администратору.")
         context.user_data['awaiting_admin_message'] = False
 
     elif context.user_data.get('awaiting_anonymous_suggestion'):
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Анонимное предложение/жалоба:\n{text}")
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=f"Анонимное предложение/жалоба:\n{text}"
+        )
         await update.message.reply_text("Ваше сообщение отправлено анонимно.")
         context.user_data['awaiting_anonymous_suggestion'] = False
 
@@ -273,18 +280,23 @@ async def handle_admin_message(update: Update, context: CallbackContext):
 
             try:
                 user_id = int(user_id)
-                await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{reply_message}")
-                await update.message.reply_text(f"Сообщение отправлено пользователю {user_id}.")
+                user_chat = await context.bot.get_chat(user_id)
+                if user_chat:
+                    await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{reply_message}")
+                    await update.message.reply_text(f"Сообщение отправлено пользователю {user_id} (ID: {user_id}).")
 
-                # Добавляем пользователя в список активных диалогов
-                active_dialogs[user_id] = True
+                    # Добавляем пользователя в список активных диалогов
+                    active_dialogs[user_id] = True
 
-                # Сохраняем сообщение в историю только если запись включена
-                if is_recording_admin:
-                    if user_id not in message_history:
-                        message_history[user_id] = []
-                    message_history[user_id].append({"from": "admin", "text": reply_message})
-                    save_message_history()
+                    # Сохраняем сообщение в историю только если запись включена
+                    if is_recording_admin:
+                        if user_id not in message_history:
+                            message_history[user_id] = []
+                        message_history[user_id].append({"from": "admin", "text": reply_message})
+                        save_message_history()
+
+                else:
+                    await update.message.reply_text("Пользователь не найден.")
 
             except ValueError:
                 await update.message.reply_text("Неправильный формат user_id. Должен быть числовым значением.")
