@@ -1,28 +1,33 @@
+# Импорты
 import requests
 import json
 import os
 import sqlite3
 from dotenv import load_dotenv
-from telegram.ext import Updater
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import (
-Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
+    Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 )
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-# Load environment variables from .env file
+# Переменные окружения
 load_dotenv()
-
 TOKEN = os.getenv('TOKEN')
 ADMIN_CHAT_ID = 808174847
+
+# Словари и списки для хранения данных
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
 active_dialogs = {}  # Словарь для хранения активных диалогов
 message_history = {}  # Словарь для хранения истории сообщений
 suggestions = {}  # Словарь для хранения предложений
 anonymous_messages = []  # Список для хранения анонимных сообщений
+
+# Файлы для сохранения данных
 HISTORY_FILE = 'message_history.json'
 ANON_FILE = 'anonymous_messages.json'
 SUGGESTIONS_FILE = 'suggestions.json'
 
+# Функции для работы с файлами
 def load_message_history():
     global message_history
     try:
@@ -63,7 +68,7 @@ def load_anonymous_messages():
 
 def save_anonymous_messages():
     try:
-        with open(ANON_FILE, 'w', encoding='utf-8') as file:
+        with open(ANON_FILE, 'r', encoding='utf-8-sig') as file:  # Используем 'utf-8-sig' для игнорирования BOM
             json.dump(anonymous_messages, file, ensure_ascii=False, indent=4)
         print("Анонимные сообщения сохранены.")
     except IOError as e:
@@ -93,22 +98,28 @@ def save_suggestions():
     except IOError as e:
         print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
 
-async def start(update: Update, context: CallbackContext):
-    user = update.effective_user  # Извлекаем пользователя из любого типа обновления
 
-    # Проверяем, было ли уже отправлено приветственное сообщение
+
+
+# Основные функции бота
+async def start(update, context):
+    user = update.effective_user
+
     if not context.user_data.get('greeted', False):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"Привет, {user.first_name}! Я бот канала 'Книги Books'.\n\n"
-                 f"Если у вас есть вопросы или предложения, обратитесь к администратору.\n"
-                 f"Администратор: @biblioteka_gb"
-        )
-        context.user_data['greeted'] = True  # Устанавливаем флаг, что приветственное сообщение отправлено
+        await send_welcome_message(update, context, user)
+        context.user_data['greeted'] = True
 
-    await show_main_menu(update, context)  # Показываем главное меню
+    await show_main_menu(update, context)
 
-async def show_main_menu(update: Update, context: CallbackContext):
+async def send_welcome_message(update, context, user):
+    welcome_text = (
+        f"Привет, {user.first_name}! Я бот канала 'Книги Books'.\n\n"
+        f"Если у вас есть вопросы или предложения, обратитесь к администратору.\n"
+        f"Администратор: @biblioteka_gb"
+    )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=welcome_text)
+
+async def show_main_menu(update, context):
     keyboard = [
         [InlineKeyboardButton("Предложка", callback_data='suggest')],
         [InlineKeyboardButton("Связаться с администратором", callback_data='call_admin')],
@@ -118,11 +129,12 @@ async def show_main_menu(update: Update, context: CallbackContext):
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
+    message_text = "**Выберите действие:**"
 
     if update.callback_query:
-        await update.callback_query.message.edit_text("Выберите действие:", reply_markup=reply_markup)
+        await update.callback_query.message.edit_text(message_text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
+        await update.message.reply_text(message_text, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def button_callback(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -157,6 +169,7 @@ async def button_callback(update: Update, context: CallbackContext):
         context.user_data.clear()  # Очистить все состояния пользователя
         await show_main_menu(update, context)  # Возвращаемся в главное меню
 
+
 async def handle_message(update: Update, context: CallbackContext):
     user = update.message.from_user
     text = update.message.text
@@ -165,26 +178,7 @@ async def handle_message(update: Update, context: CallbackContext):
         await handle_admin_message(update, context)
         return
 
-    # Сохраняем сообщение в историю
-    if user.id not in message_history:
-        message_history[user.id] = []
-    message_history[user.id].append({"from": "user", "text": text})
-    save_message_history()
-
-    # Добавляем пользователя в список активных диалогов
-    active_dialogs[user.id] = True
-
-    if context.user_data.get('awaiting_suggestion'):
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое предложение от {user.username}:\n{text}")
-        await update.message.reply_text("Спасибо за ваше предложение!")
-        context.user_data['awaiting_suggestion'] = False
-
-    elif context.user_data.get('awaiting_admin_message'):
-        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое сообщение для админа от {user.username}:\n{text}")
-        await update.message.reply_text("Ваше сообщение отправлено администратору.")
-        context.user_data['awaiting_admin_message'] = False
-
-    elif context.user_data.get('awaiting_search_query'):
+    if context.user_data.get('awaiting_search_query'):
         books = search_books(text)
         if books:
             for book in books:
@@ -208,6 +202,25 @@ async def handle_message(update: Update, context: CallbackContext):
                 chat_id=update.effective_chat.id,
                 text="Книги не найдены."
             )
+        # Не сохраняем сообщение в истории, но продолжаем ожидать следующий запрос на поиск книги.
+        return
+
+    if user.id not in message_history:
+        message_history[user.id] = []
+    message_history[user.id].append({"from": "user", "text": text})
+    save_message_history()
+
+    active_dialogs[user.id] = True
+
+    if context.user_data.get('awaiting_suggestion'):
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое предложение от {user.username}:\n{text}")
+        await update.message.reply_text("Спасибо за ваше предложение!")
+        context.user_data['awaiting_suggestion'] = False
+
+    elif context.user_data.get('awaiting_admin_message'):
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Новое сообщение для админа от {user.username}:\n{text}")
+        await update.message.reply_text("Ваше сообщение отправлено администратору.")
+        context.user_data['awaiting_admin_message'] = False
 
     elif context.user_data.get('awaiting_anonymous_suggestion'):
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=f"Анонимное предложение/жалоба:\n{text}")
@@ -216,6 +229,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
     else:
         await update.message.reply_text("Неизвестная команда. Пожалуйста, используйте меню для навигации.")
+
 
 async def handle_admin_message(update: Update, context: CallbackContext):
     user = update.message.from_user
@@ -262,6 +276,9 @@ async def notify_admin(update: Update, context: CallbackContext):
     user_admin_chat[user.id] = ADMIN_CHAT_ID
     active_dialogs[user.id] = True  # Добавляем пользователя в список активных диалогов
 
+
+
+# Команды для администратора
 async def show_help(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
@@ -322,6 +339,9 @@ async def clear_user_suggestions(update: Update, context: CallbackContext):
     except (IndexError, ValueError):
         await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
 
+
+
+# Команды для администратора и операций с пользователями
 async def show_users(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
@@ -376,7 +396,7 @@ async def show_active_dialogs(update: Update, context: CallbackContext):
 async def close_dialog(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
-        return
+    return
 
     try:
         user_id = int(context.args[0])
@@ -391,7 +411,7 @@ async def close_dialog(update: Update, context: CallbackContext):
 async def clear_chat(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
-        return
+    return
 
     try:
         user_id = int(context.args[0])
@@ -404,6 +424,10 @@ async def clear_chat(update: Update, context: CallbackContext):
     except (IndexError, ValueError):
         await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
 
+
+
+
+    # Операции с анонимными сообщениями
 async def show_anonymous_messages(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
@@ -440,12 +464,19 @@ async def clear_one_anonymous_message(update: Update, context: CallbackContext):
     except (IndexError, ValueError):
         await update.message.reply_text("Пожалуйста, укажите корректный номер сообщения.")
 
+
+
+SEARCH_BOOK = 1
+# Операции с базой данных книг
 def search_books(query):
     try:
         conn = sqlite3.connect('books.db')
         cursor = conn.cursor()
 
-        # Приводим запрос и название книги к нижнему регистру для сравнения
+        # Print the query being executed
+        print(f"Executing query: {query}")
+
+        # Execute the SQL query
         query = f"%{query.lower()}%"
         cursor.execute("""
             SELECT id, title, price, image_url, availability
@@ -454,6 +485,7 @@ def search_books(query):
         """, (query,))
 
         rows = cursor.fetchall()
+        print(f"Found {len(rows)} books matching the query.")
 
         books = []
         for row in rows:
@@ -471,6 +503,10 @@ def search_books(query):
         print(f"Error fetching books: {e}")
         return []
 
+
+
+
+# Основная функция запуска бота
 def main():
     global message_history, active_dialogs
     load_message_history()  # Загружаем историю сообщений
@@ -490,7 +526,7 @@ def main():
     application.add_handler(CommandHandler("clearanon", clear_one_anonymous_message))  # Команда для удаления одного анонимного сообщения
     application.add_handler(CommandHandler("predl", show_suggestions))  # Команда для показа предложений
     application.add_handler(CommandHandler("clearpredl", clear_all_suggestions))  # Команда для очистки всех предложений
-    application.add_handler(CommandHandler("clearpredl", clear_user_suggestions))  # Команда для очистки предложений пользователя
+    application.add_handler(CommandHandler("clearpredl_user", clear_user_suggestions))  # Команда для очистки предложений пользователя
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
@@ -506,5 +542,7 @@ def main():
 
     application.run_polling()
 
+
+# Запуск приложения
 if __name__ == '__main__':
     main()
