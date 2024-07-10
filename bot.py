@@ -15,6 +15,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 ADMIN_CHAT_ID = 808174847
+# 808174847 м
+# 6984945831 т
 
 # Словари и списки для хранения данных
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
@@ -36,7 +38,8 @@ def load_message_history():
     try:
         if os.path.exists(HISTORY_FILE):
             with open(HISTORY_FILE, 'r', encoding='utf-8') as file:
-                message_history = json.load(file)
+                loaded_history = json.load(file)
+                message_history = {int(key): value for key, value in loaded_history.items()}
                 print("История сообщений загружена.")
         else:
             print(f"Файл {HISTORY_FILE} не найден.")
@@ -49,7 +52,7 @@ def load_message_history():
 def save_message_history():
     try:
         with open(HISTORY_FILE, 'w', encoding='utf-8') as file:
-            json.dump(message_history, file, ensure_ascii=False, indent=4)
+            json.dump({str(key): value for key, value in message_history.items()}, file, ensure_ascii=False, indent=4)
         print("История сообщений сохранена.")
     except IOError as e:
         print(f"Ошибка при записи файла {HISTORY_FILE}: {e}")
@@ -82,7 +85,8 @@ def load_suggestions():
     try:
         if os.path.exists(SUGGESTIONS_FILE):
             with open(SUGGESTIONS_FILE, 'r', encoding='utf-8') as file:
-                suggestions = json.load(file)
+                loaded_suggestions = json.load(file)
+                suggestions = {int(key): value for key, value in loaded_suggestions.items()}
                 print("Предложения загружены.")
         else:
             print(f"Файл {SUGGESTIONS_FILE} не найден.")
@@ -95,7 +99,7 @@ def load_suggestions():
 def save_suggestions():
     try:
         with open(SUGGESTIONS_FILE, 'w', encoding='utf-8') as file:
-            json.dump(suggestions, file, ensure_ascii=False, indent=4)
+            json.dump({str(key): value for key, value in suggestions.items()}, file, ensure_ascii=False, indent=4)
         print("Предложения сохранены.")
     except IOError as e:
         print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
@@ -111,6 +115,9 @@ async def start(update, context):
     await stop_recording_user(update, context)
     await stop_recording_admin(update, context)
 
+    if not context.user_data.get('greeted', False):
+        await send_welcome_message(update, context, user)
+        context.user_data['greeted'] = True
     if not context.user_data.get('initialized'):
         context.user_data['initialized'] = True
         if user.id == ADMIN_CHAT_ID:
@@ -119,13 +126,10 @@ async def start(update, context):
             await show_main_menu(update, context)
     user = update.effective_user
 
-    if not context.user_data.get('greeted', False):
-        await send_welcome_message(update, context, user)
-        context.user_data['greeted'] = True
 
 async def send_welcome_message(update, context, user):
     welcome_text = (
-        f"Привет, {user.first_name}! Я бот канала 'Книги Books'.\n\n"
+        f"Привет, {user.first_name}! Я бот канала 'Good Books'.\n\n"
         f"Если у вас есть вопросы или предложения, обратитесь к администратору.\n"
         f"Администратор: @biblioteka_gb"
     )
@@ -164,6 +168,7 @@ async def button_callback(update: Update, context: CallbackContext):
         await query.edit_message_text("Вы выбрали 'Поиск книги'. Отправьте название книги для поиска.",
                                       reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]]))
         context.user_data['awaiting_search_query'] = True
+        active_dialogs[query.from_user.id] = SEARCH_BOOK  # Добавлено отслеживание запроса поиска книги
 
     elif query.data == 'anonymous_suggestion':
         await query.edit_message_text("Вы выбрали 'Анонимное предложение/жалоба'. "
@@ -183,50 +188,16 @@ async def handle_message(update: Update, context: CallbackContext):
     user = update.message.from_user
     text = update.message.text
 
+    if user.id in active_dialogs and active_dialogs[user.id] == SEARCH_BOOK:
+        await handle_search_query(update, context, text)
+        return
+
     if user.id == ADMIN_CHAT_ID:
         await handle_admin_message(update, context)
         return
 
     if context.user_data.get('awaiting_search_query'):
-        books = search_books(text)
-        if books:
-            for index, book in enumerate(books, start=1):
-                buttons = [
-                    [InlineKeyboardButton(f"Купить книгу {index}", url=f"tg://user?id={ADMIN_CHAT_ID}")]
-                ]
-                reply_markup = InlineKeyboardMarkup(buttons)
-                try:
-                    if book["image_url"]:
-                        await context.bot.send_photo(
-                            chat_id=update.effective_chat.id,
-                            photo=book["image_url"],
-                            caption=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}",
-                            reply_markup=reply_markup
-                        )
-                    else:
-                        await context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото отсутствует)",
-                            reply_markup=reply_markup
-                        )
-                except telegram.error.BadRequest:
-                    await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото не найдено)",
-                        reply_markup=reply_markup
-                    )
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Вернуться в главное меню",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
-            )
-        else:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Книги не найдены.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
-            )
-        context.user_data['awaiting_search_query'] = False
+        await handle_search_query(update, context, text)
         return
 
     if user.id in is_recording_user and is_recording_user[user.id]:
@@ -263,6 +234,47 @@ async def handle_message(update: Update, context: CallbackContext):
 
     else:
         await update.message.reply_text("Неизвестная команда. Пожалуйста, используйте меню для навигации.")
+
+async def handle_search_query(update: Update, context: CallbackContext, query: str):
+    books = search_books(query)
+    if books:
+        for index, book in enumerate(books, start=1):
+            buttons = [
+                [InlineKeyboardButton(f"Купить книгу {index}", url=f"tg://user?id={ADMIN_CHAT_ID}")]
+            ]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            try:
+                if book["image_url"]:
+                    await context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=book["image_url"],
+                        caption=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}",
+                        reply_markup=reply_markup
+                    )
+                else:
+                    await context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото отсутствует)",
+                        reply_markup=reply_markup
+                    )
+            except telegram.error.BadRequest:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото не найдено)",
+                    reply_markup=reply_markup
+                )
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Вернуться в главное меню",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
+        )
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Книги не найдены.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Назад", callback_data='back_to_main_menu')]])
+        )
+    active_dialogs[update.effective_chat.id] = False
 
 
 async def handle_admin_message(update: Update, context: CallbackContext):
@@ -304,7 +316,11 @@ async def handle_admin_message(update: Update, context: CallbackContext):
                 await update.message.reply_text(f"Ошибка при отправке сообщения: {e}")
             return
 
-    await update.message.reply_text("Сообщение от администратора получено.")
+        if context.user_data.get('awaiting_search_query'):
+            await handle_search_query(update, context, text)
+            return
+
+    await update.message.reply_text("Неправильный формат команды. Используйте: /reply <user_id> <сообщение>")
 
     #--------
 
