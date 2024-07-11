@@ -8,43 +8,11 @@
     "7225023702": [
         {
             "from": "user",
-            "text": "свита"
+            "text": "1"
         },
         {
-            "from": "user",
-            "text": "йоу"
-        },
-        {
-            "from": "user",
-            "text": "вита"
-        },
-        {
-            "from": "user",
-            "text": "вита"
-        },
-        {
-            "from": "user",
-            "text": "вита"
-        },
-        {
-            "from": "user",
-            "text": "а"
-        },
-        {
-            "from": "user",
-            "text": "вита"
-        },
-        {
-            "from": "user",
-            "text": "вита"
-        },
-        {
-            "from": "user",
-            "text": "свита"
-        },
-        {
-            "from": "user",
-            "text": "вита"
+            "from": "admin",
+            "text": "2"
         }
     ]
 }
