@@ -21,6 +21,7 @@ SEARCH_BOOK = "SEARCH_BOOK"
 HISTORY_FILE = 'message_history.json'
 ANON_FILE = 'anonymous_messages.json'
 SUGGESTIONS_FILE = 'suggestions.json'
+USER_STATUS_FILE = 'user_status.json'
 
 # Функции для работы с файлами
 def load_message_history():
@@ -86,6 +87,34 @@ def save_suggestions():
         print("Предложения сохранены.")
     except IOError as e:
         print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
+
+def load_user_status():
+    default_status = {"active_users": [], "inactive_users": []}
+    if not os.path.exists(USER_STATUS_FILE):
+        return default_status
+
+    try:
+        with open(USER_STATUS_FILE, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            active_users = [user for user in data.get("active_users", []) if user != ADMIN_CHAT_ID]
+            inactive_users = data.get("inactive_users", [])
+            return {
+                "active_users": active_users,
+                "inactive_users": inactive_users,
+            }
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"Error reading {USER_STATUS_FILE}: {e}")
+        return default_status
+
+def save_user_status(active_users, inactive_users):
+    try:
+        with open(USER_STATUS_FILE, 'w', encoding='utf-8') as file:
+            json.dump({"active_users": active_users, "inactive_users": inactive_users}, file, ensure_ascii=False, indent=4)
+        print("Статус пользователей сохранен.")
+    except IOError as e:
+        print(f"Ошибка при записи файла {USER_STATUS_FILE}: {e}")
+
+user_status = load_user_status()
 
 # Словари и списки для хранения данных
 user_admin_chat = {}  # Словарь для хранения текущих запросов к администратору
@@ -181,6 +210,14 @@ async def button_callback(update: Update, context: CallbackContext):
 async def handle_message(update: Update, context: CallbackContext):
     user = update.message.from_user
     text = update.message.text
+    global user_status
+
+    # Не добавлять администратора в список активных пользователей
+    if user.id != ADMIN_CHAT_ID and user.id not in user_status['active_users']:
+        user_status['active_users'].append(user.id)
+        if user.id in user_status['inactive_users']:
+            user_status['inactive_users'].remove(user.id)
+        save_user_status(user_status['active_users'], user_status['inactive_users'])
 
     # Проверяем флаг и очищаем его, если установлен
     if context.user_data.get('ignore_next_message'):
@@ -204,19 +241,16 @@ async def handle_message(update: Update, context: CallbackContext):
             await show_main_menu(update, context)
         return
 
-    # Проверка нажатия "Поиск книги"
     if text.lower() == "поиск книги":
         context.user_data['awaiting_search_query'] = True
         await update.message.reply_text("Введите название книги для поиска:", reply_markup=reply_markup)
         return
 
-    # Проверка состояния ожидания запроса на поиск книги
     if context.user_data.get('awaiting_search_query'):
         context.user_data['awaiting_search_query'] = False
         await handle_search_query(update, context, text)
         return
 
-    # Добавьте эту часть
     if text.lower() == "показать активные диалоги" and user.id == ADMIN_CHAT_ID:
         await show_active_dialogs(update, context)
         return
@@ -226,7 +260,6 @@ async def handle_message(update: Update, context: CallbackContext):
         await update.message.reply_text("Отправьте ваше сообщение администратору.")
         return
 
-    # Проверка состояния ожидания предложения
     if text.lower() == "предложка":
         context.user_data['awaiting_suggestion'] = True
         await update.message.reply_text("Отправьте ваше предложение.", reply_markup=reply_markup)
@@ -243,7 +276,6 @@ async def handle_message(update: Update, context: CallbackContext):
         await update.message.reply_text("Спасибо за ваше предложение!", reply_markup=reply_markup)
         return
 
-    # Добавьте эту часть
     if text.lower() == "анонимное предложение/жалоба":
         context.user_data['awaiting_anonymous_suggestion'] = True
         await update.message.reply_text("Отправьте ваше предложение или жалобу анонимно.", reply_markup=reply_markup)
@@ -278,7 +310,16 @@ async def handle_message(update: Update, context: CallbackContext):
     message_history[user.id].append({"from": "user", "text": text})
     save_message_history()
 
+    # Регистрация активного диалога
     active_dialogs[user.id] = True
+
+    # Обновление статуса пользователя
+    user_status = load_user_status()
+    if user.id != ADMIN_CHAT_ID and user.id not in user_status['active_users']:
+        user_status['active_users'].append(user.id)
+    if user.id in user_status['inactive_users']:
+        user_status['inactive_users'].remove(user.id)
+    save_user_status(user_status['active_users'], user_status['inactive_users'])
 
     if context.user_data.get('awaiting_suggestion'):
         await context.bot.send_message(
@@ -354,8 +395,7 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
                     reply_markup=reply_markup
                 )
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Вернуться в главное меню"
+            chat_id=update.effective_chat.id
         )
     else:
         await context.bot.send_message(
@@ -363,14 +403,12 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
             text="Книги не найдены."
         )
 
-    # Удаляем пользователя из активных диалогов после обработки поиска книги
-    if update.effective_user.id in active_dialogs:
-        del active_dialogs[update.effective_user.id]
 
 
 async def handle_admin_message(update: Update, context: CallbackContext):
     user = update.message.from_user
     text = update.message.text
+    global user_status
 
     if user.id == ADMIN_CHAT_ID:
         if text.startswith('/reply'):
@@ -389,7 +427,11 @@ async def handle_admin_message(update: Update, context: CallbackContext):
                     await update.message.reply_text(f"Сообщение отправлено пользователю {user_id} (ID: {user_id}).", reply_markup=ReplyKeyboardRemove())
 
                     # Добавляем пользователя в список активных диалогов
-                    active_dialogs[user_id] = True
+                    if user_id not in user_status['active_users']:
+                        user_status['active_users'].append(user_id)
+                        if user_id in user_status['inactive_users']:
+                            user_status['inactive_users'].remove(user_id)
+                        save_user_status(user_status['active_users'], user_status['inactive_users'])
 
                     # Сохраняем сообщение в историю
                     if user_id not in message_history:
@@ -523,7 +565,31 @@ async def clear_user_suggestions(update: Update, context: CallbackContext):
 
 
 # Команды для администратора и операций с пользователями
+async def close_dialog(update: Update, context: CallbackContext):
+    global user_status
+
+    user_id = update.message.from_user.id
+
+    # Проверка, что команда доступна только для администратора
+    if user_id != ADMIN_CHAT_ID:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        if target_user_id in user_status['active_users']:
+            user_status['active_users'].remove(target_user_id)
+            user_status['inactive_users'].append(target_user_id)
+            save_user_status(user_status['active_users'], user_status['inactive_users'])
+            await update.message.reply_text(f"Диалог с пользователем {target_user_id} закрыт.")
+        else:
+            await update.message.reply_text("Этот диалог уже закрыт или не существует.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
+
 async def show_users(update: Update, context: CallbackContext):
+    global user_status
+
     if update.message.from_user.id != ADMIN_CHAT_ID:
         await update.message.reply_text("Эта команда доступна только для администратора.")
         return
@@ -531,14 +597,17 @@ async def show_users(update: Update, context: CallbackContext):
     active_users_message = "Активные пользователи:\n"
     inactive_users_message = "Неактивные пользователи:\n"
 
-    for user_id in message_history.keys():
+    user_status = load_user_status()  # Перезагружаем статус пользователя
+
+    for user_id in user_status['active_users']:
         user_info = await context.bot.get_chat(user_id)
         username = f"@{user_info.username}" if user_info.username else user_info.first_name
+        active_users_message += f"ID: {user_id}, Username: {username}\n"
 
-        if active_dialogs.get(user_id, False):
-            active_users_message += f"ID: {user_id}, Username: {username}\n"
-        else:
-            inactive_users_message += f"ID: {user_id}, Username: {username}\n"
+    for user_id in user_status['inactive_users']:
+        user_info = await context.bot.get_chat(user_id)
+        username = f"@{user_info.username}" if user_info.username else user_info.first_name
+        inactive_users_message += f"ID: {user_id}, Username: {username}\n"
 
     users_message = active_users_message + "\n" + "*"*10 + "\n" + inactive_users_message
     await update.message.reply_text(users_message)
@@ -573,7 +642,8 @@ async def show_active_dialogs(update: Update, context: CallbackContext):
         return
 
     active_users_message = "Активные диалоги:\n"
-    for user_id in active_dialogs:
+    user_status = load_user_status()
+    for user_id in user_status['active_users']:
         user_info = await context.bot.get_chat(user_id)
         username = f"@{user_info.username}" if user_info.username else user_info.first_name
         active_users_message += f"ID: {user_id}, Username: {username}\n"
@@ -583,36 +653,27 @@ async def show_active_dialogs(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text(active_users_message)
 
-async def close_dialog(update: Update, context: CallbackContext):
+
+async def clearchat(update: Update, context: CallbackContext):
     if update.message.from_user.id != ADMIN_CHAT_ID:
-        await update.message.reply_text("Эта команда доступна только для администратора.")
-    return
+        await update.message.reply_text("Вы не имеете прав для выполнения этой команды.")
+        return
+
+    args = context.args
+    if len(args) != 1:
+        await update.message.reply_text("Использование: /clearchat <user_id>")
+        return
 
     try:
-        user_id = int(context.args[0])
-        if user_id in active_dialogs:
-            active_dialogs[user_id] = False
-            await update.message.reply_text(f"Диалог с пользователем {user_id} закрыт.")
-        else:
-            await update.message.reply_text("Этот диалог уже закрыт или не существует.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
-
-async def clear_chat(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_CHAT_ID:
-        await update.message.reply_text("Эта команда доступна только для администратора.")
-    return
-
-    try:
-        user_id = int(context.args[0])
+        user_id = int(args[0])
         if user_id in message_history:
             del message_history[user_id]
             save_message_history()
-            await update.message.reply_text(f"История сообщений с пользователем {user_id} очищена.")
+            await update.message.reply_text(f"История сообщений пользователя {user_id} удалена.")
         else:
-            await update.message.reply_text("История сообщений с этим пользователем не найдена.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
+            await update.message.reply_text(f"История сообщений пользователя {user_id} не найдена.")
+    except ValueError:
+        await update.message.reply_text("user_id должен быть числовым значением.")
 
 
 
@@ -704,7 +765,7 @@ def main():
     application.add_handler(CommandHandler("users", show_users))
     application.add_handler(CommandHandler("history", show_user_history))
     application.add_handler(CommandHandler("closedia", close_dialog))
-    application.add_handler(CommandHandler("clearchat", clear_chat))  # Добавляем команду clearchat
+    application.add_handler(CommandHandler("clearchat", clearchat))  # Добавляем команду clearchat
     application.add_handler(CommandHandler("anon", show_anonymous_messages))  # Команда для показа анонимных сообщений
     application.add_handler(CommandHandler("clearanonall", clear_anonymous_messages))  # Команда для очистки всех анонимных сообщений
     application.add_handler(CommandHandler("clearanon", clear_one_anonymous_message))  # Команда для удаления одного анонимного сообщения
