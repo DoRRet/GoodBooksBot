@@ -1,6 +1,6 @@
 {
-    "active_users": [],
-    "inactive_users": [
+    "active_users": [
         7225023702
-    ]
+    ],
+    "inactive_users": []
 }

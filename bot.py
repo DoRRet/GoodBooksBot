@@ -6,7 +6,7 @@ import random
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from telegram.ext import (
-    Application, CommandHandler, CallbackContext, MessageHandler, filters
+    Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 )
 
 load_dotenv()
@@ -263,7 +263,12 @@ async def handle_message(update: Update, context: CallbackContext):
             chat_id=ADMIN_CHAT_ID,
             text=f"Новое сообщение для админа от пользователя @{user.username} (ID: {user.id}):\n{text}"
         )
-        await update.message.reply_text("Ваше сообщение отправлено администратору.", reply_markup=reply_markup)
+
+        # Уведомление пользователю
+        await update.message.reply_text(
+            "Сообщение администратору отправлено, он ответит как только сможет. Можете продолжать пользоваться ботом. Что бы ответить администратору, снова нажмите на кнопку 'Сообщение администратору'",
+            reply_markup=reply_markup
+        )
 
         user_status = load_user_status()
         if user.id != ADMIN_CHAT_ID and user.id not in user_status['active_users']:
@@ -274,10 +279,11 @@ async def handle_message(update: Update, context: CallbackContext):
 
         if user.id not in message_history:
             message_history[user.id] = []
-        message_history[user.id].append({"from": "user", "text": text})
+        message_history[user.id].append({"from": "user", "text": text, "timestamp": update.message.date.isoformat()})
         save_message_history()
 
         return
+
     await update.message.reply_text("Неизвестная команда. Пожалуйста, используйте меню для навигации.", reply_markup=reply_markup)
 
 
@@ -333,9 +339,32 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
 async def handle_admin_message(update: Update, context: CallbackContext):
     user = update.message.from_user
     text = update.message.text
-    global user_status
 
     if user.id == ADMIN_CHAT_ID:
+        # Проверяем, ожидает ли бот сообщение для ответа пользователю
+        if 'awaiting_reply_user_id' in context.user_data:
+            user_id = context.user_data.pop('awaiting_reply_user_id')
+
+            try:
+                user_id = int(user_id)
+                await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{text}")
+                await update.message.reply_text(f"Сообщение отправлено пользователю {user_id}.")
+
+                # Сохраняем сообщение в истории с временной меткой
+                if user_id not in message_history:
+                    message_history[user_id] = []
+                message_history[user_id].append({
+                    "from": "admin",
+                    "text": text,
+                    "timestamp": update.message.date.isoformat()  # Добавление временной метки
+                })
+                save_message_history()
+
+            except Exception as e:
+                await update.message.reply_text(f"Ошибка при отправке сообщения: {e}")
+            return
+
+        # Существующий код обработки команды /reply
         if text.startswith('/reply'):
             parts = text.split(' ', 2)
             if len(parts) < 3:
@@ -346,36 +375,24 @@ async def handle_admin_message(update: Update, context: CallbackContext):
 
             try:
                 user_id = int(user_id)
-                user_chat = await context.bot.get_chat(user_id)
-                if user_chat:
-                    await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{reply_message}")
-                    await update.message.reply_text(f"Сообщение отправлено пользователю {user_id} (ID: {user_id}).", reply_markup=ReplyKeyboardRemove())
+                await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{reply_message}")
+                await update.message.reply_text(f"Сообщение отправлено пользователю {user_id}.")
 
-                    if user_id not in user_status['active_users']:
-                        user_status['active_users'].append(user_id)
-                        if user_id in user_status['inactive_users']:
-                            user_status['inactive_users'].remove(user_id)
-                        save_user_status(user_status['active_users'], user_status['inactive_users'])
+                # Сохраняем сообщение в истории с временной меткой
+                if user_id not in message_history:
+                    message_history[user_id] = []
+                message_history[user_id].append({
+                    "from": "admin",
+                    "text": reply_message,
+                    "timestamp": update.message.date.isoformat()  # Добавление временной метки
+                })
+                save_message_history()
 
-                    if user_id not in message_history:
-                        message_history[user_id] = []
-                    message_history[user_id].append({"from": "admin", "text": reply_message})
-                    save_message_history()
-
-                else:
-                    await update.message.reply_text("Пользователь не найден.")
-
-            except ValueError:
-                await update.message.reply_text("Неправильный формат user_id. Должен быть числовым значением.")
             except Exception as e:
                 await update.message.reply_text(f"Ошибка при отправке сообщения: {e}")
             return
 
-        if context.user_data.get('awaiting_search_query'):
-            await handle_search_query(update, context, text)
-            return
-
-    await update.message.reply_text("Неправильный формат команды. Используйте: /reply <user_id> <сообщение>", reply_markup=ReplyKeyboardRemove())
+    await update.message.reply_text("Неправильный формат команды. Используйте: /reply <user_id> <сообщение>")
 
 
     #--------
@@ -563,25 +580,45 @@ async def show_user_history(update: Update, context: CallbackContext):
         await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
 
 async def show_active_dialogs(update: Update, context: CallbackContext):
-    user = update.callback_query.from_user if update.callback_query else update.message.from_user
-    if user.id != ADMIN_CHAT_ID:
-        if update.callback_query:
-            await update.callback_query.message.reply_text("Эта команда доступна только для администратора.")
-        else:
-            await update.message.reply_text("Эта команда доступна только для администратора.")
+    if update.message.from_user.id != ADMIN_CHAT_ID:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
         return
 
-    active_users_message = "Активные диалоги:\n"
     user_status = load_user_status()
-    for user_id in user_status['active_users']:
-        user_info = await context.bot.get_chat(user_id)
-        username = f"@{user_info.username}" if user_info.username else user_info.first_name
-        active_users_message += f"ID: {user_id}, Username: {username}\n"
+    active_users = user_status['active_users']
 
-    if update.callback_query:
-        await update.callback_query.message.reply_text(active_users_message)
-    else:
-        await update.message.reply_text(active_users_message)
+    if not active_users:
+        await update.message.reply_text("Нет активных диалогов.")
+        return
+
+    messages = []
+    buttons = []
+    for user_id in active_users:
+        last_message = message_history.get(user_id, [])
+        if last_message:
+            last_message = last_message[-1]
+            last_text = last_message.get("text", "No text")
+            last_time = last_message.get("timestamp", "No timestamp")
+            if last_message.get("from") == "admin":
+                messages.append(f"✅  Пользователь ID: {user_id}\nПоследнее сообщение от администратора: {last_text}\nВремя: {last_time}\n")
+            else:
+                messages.append(f"🆘  Пользователь ID: {user_id}\nПоследнее сообщение от пользователя: {last_text}\nВремя: {last_time}\n")
+            buttons.append([InlineKeyboardButton(f"Ответить {user_id}", callback_data=f"reply_{user_id}")])
+        else:
+            messages.append(f"Пользователь ID: {user_id}\nНет сообщений.\n")
+            buttons.append([InlineKeyboardButton(f"Ответить {user_id}", callback_data=f"reply_{user_id}")])
+
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await update.message.reply_html("<b>Активные диалоги:</b>\n\n" + "\n".join(messages), reply_markup=reply_markup)
+
+async def handle_reply_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = query.data.split('_')[1]
+    context.user_data['awaiting_reply_user_id'] = user_id
+
+    await query.edit_message_text(text=f"Введите сообщение для пользователя {user_id}:")
 
 
 async def clearchat(update: Update, context: CallbackContext):
@@ -700,6 +737,7 @@ def main():
     application.add_handler(CommandHandler("clearonepredl", clear_suggestion_by_number))
     application.add_handler(CommandHandler("clearpredl", clear_suggestions_by_user))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(CallbackQueryHandler(handle_reply_callback, pattern=r"^reply_"))
 
     application.add_handler(MessageHandler(
         filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
