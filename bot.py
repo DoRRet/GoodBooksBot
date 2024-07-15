@@ -221,6 +221,32 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if context.user_data.get('awaiting_admin_message'):
         context.user_data['awaiting_admin_message'] = False
+        if user.id not in user_status['active_users']:
+            user_status['active_users'].append(user.id)
+        if user.id in user_status['inactive_users']:
+            user_status['inactive_users'].remove(user.id)
+        save_user_status(user_status['active_users'], user_status['inactive_users'])
+
+        # Сохранение сообщения в историю пользователя
+        if user.id not in message_history:
+            message_history[user.id] = []
+        message_history[user.id].append({
+            "from": "user",
+            "text": text,
+            "timestamp": update.message.date.isoformat()
+        })
+        save_message_history()
+
+        # Сохранение сообщения в историю админа
+        if ADMIN_CHAT_ID not in message_history:
+            message_history[ADMIN_CHAT_ID] = []
+        message_history[ADMIN_CHAT_ID].append({
+            "from": "user",
+            "text": text,
+            "timestamp": update.message.date.isoformat()
+        })
+        save_message_history()
+
         admin_message = f"Сообщение от пользователя @{user.username} (ID: {user.id}):\n{text}"
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
         await update.message.reply_text("Ваше сообщение отправлено администратору. Он скоро свяжется с вами.", reply_markup=reply_markup)
@@ -373,15 +399,43 @@ async def handle_admin_message(update: Update, context: CallbackContext):
             await show_admin_menu(update, context)
             return
 
+        if text.lower() == "закрыть диалог":
+            if 'awaiting_reply_user_id' in context.user_data:
+                user_id = context.user_data['awaiting_reply_user_id']
+                await close_dialog_command(update, context, user_id)
+                is_admin_reply_mode = False
+                context.user_data.pop('awaiting_reply_user_id', None)
+            else:
+                await update.message.reply_text("Нет активного диалога для закрытия.")
+            return
+
+        if text.lower().startswith("/closedia"):
+            parts = text.split()
+            if len(parts) == 2:
+                await close_dialog_command(update, context, parts[1])
+            else:
+                await update.message.reply_text("Неправильный формат команды. Используйте: /closedia <user_id>")
+            return
+
         if is_admin_reply_mode:
             if 'awaiting_reply_user_id' in context.user_data:
                 user_id = context.user_data['awaiting_reply_user_id']
 
                 try:
                     user_id = int(user_id)
+
+                    # Отправка сообщения пользователю
                     await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{text}")
                     await update.message.reply_text(f"Сообщение отправлено пользователю {user_id}.")
 
+                    # Обновляем статус пользователя на активный
+                    if user_id not in user_status['active_users']:
+                        user_status['active_users'].append(user_id)
+                    if user_id in user_status['inactive_users']:
+                        user_status['inactive_users'].remove(user_id)
+                    save_user_status(user_status['active_users'], user_status['inactive_users'])
+
+                    # Сохраняем сообщение в историю
                     if user_id not in message_history:
                         message_history[user_id] = []
                     message_history[user_id].append({
@@ -393,6 +447,7 @@ async def handle_admin_message(update: Update, context: CallbackContext):
 
                 except Exception as e:
                     await update.message.reply_text(f"Ошибка при отправке сообщения: {e}")
+
             return
 
         if text.startswith('/reply'):
@@ -405,9 +460,19 @@ async def handle_admin_message(update: Update, context: CallbackContext):
 
             try:
                 user_id = int(user_id)
+
+                # Отправка сообщения пользователю
                 await context.bot.send_message(chat_id=user_id, text=f"Ответ от администратора:\n{reply_message}")
                 await update.message.reply_text(f"Сообщение отправлено пользователю {user_id}.")
 
+                # Обновляем статус пользователя на активный
+                if user_id not in user_status['active_users']:
+                    user_status['active_users'].append(user_id)
+                if user_id in user_status['inactive_users']:
+                    user_status['inactive_users'].remove(user_id)
+                save_user_status(user_status['active_users'], user_status['inactive_users'])
+
+                # Сохраняем сообщение в историю
                 if user_id not in message_history:
                     message_history[user_id] = []
                 message_history[user_id].append({
@@ -534,19 +599,11 @@ async def clear_suggestions_by_user(update: Update, context: CallbackContext):
     except (IndexError, ValueError):
         await update.message.reply_text("Использование: /clearpredl <id пользователя>")
 
-
-
-async def close_dialog(update: Update, context: CallbackContext):
+async def close_dialog_command(update: Update, context: CallbackContext, user_id: str):
     global user_status
 
-    user_id = update.message.from_user.id
-
-    if user_id != ADMIN_CHAT_ID:
-        await update.message.reply_text("Эта команда доступна только для администратора.")
-        return
-
     try:
-        target_user_id = int(context.args[0])
+        target_user_id = int(user_id)
         if target_user_id in user_status['active_users']:
             user_status['active_users'].remove(target_user_id)
             user_status['inactive_users'].append(target_user_id)
@@ -554,8 +611,15 @@ async def close_dialog(update: Update, context: CallbackContext):
             await update.message.reply_text(f"Диалог с пользователем {target_user_id} закрыт.")
         else:
             await update.message.reply_text("Этот диалог уже закрыт или не существует.")
-    except (IndexError, ValueError):
+    except ValueError:
         await update.message.reply_text("Пожалуйста, укажите корректный ID пользователя.")
+
+async def close_dialog(update: Update, context: CallbackContext):
+    user = update.message.from_user
+    if user.id == ADMIN_CHAT_ID:
+        await close_dialog_command(update, context, context.args[0])
+    else:
+        await update.message.reply_text("Эта команда доступна только для администратора.")
 
 async def show_users(update: Update, context: CallbackContext):
     global user_status
@@ -644,7 +708,7 @@ async def handle_reply_callback(update: Update, context: CallbackContext):
     is_admin_reply_mode = True
 
     buttons = [
-        ["Назад ⬅️"]
+        ["Назад ⬅️", "Закрыть диалог"]
     ]
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
 
