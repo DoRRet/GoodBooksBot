@@ -11,7 +11,7 @@ from telegram.ext import (
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
-ADMIN_CHAT_ID = 808174847
+ADMIN_CHAT_ID = 6984945831
 SEARCH_BOOK = "SEARCH_BOOK"
 # 808174847 м
 # 6984945831 т
@@ -688,12 +688,12 @@ def search_books(query):
         conn = sqlite3.connect('books.db')
         cursor = conn.cursor()
 
-        formatted_query = f"%{query.upper()}%"
+        formatted_query = f"%{query.lower()}%"
 
         cursor.execute("""
             SELECT id, title, price, image_url, availability
             FROM Book
-            WHERE UPPER(title) LIKE ?
+            WHERE LOWER(title) LIKE ?
         """, (formatted_query,))
 
         rows = cursor.fetchall()
