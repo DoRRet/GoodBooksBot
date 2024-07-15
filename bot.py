@@ -684,32 +684,36 @@ def search_books(query):
         conn = sqlite3.connect('books.db')
         cursor = conn.cursor()
 
-        formatted_query = f"%{query.lower()}%"
-
         cursor.execute("""
             SELECT id, title, price, image_url, availability
             FROM Book
-            WHERE LOWER(title) LIKE ?
-        """, (formatted_query,))
+        """)
 
         rows = cursor.fetchall()
-
-        books = []
-        for row in rows:
-            book = {
+        books = [
+            {
                 "id": row[0],
                 "title": row[1],
                 "price": row[2],
                 "image_url": row[3],
                 "availability": row[4]
             }
-            books.append(book)
+            for row in rows
+        ]
+
+        # Приведение заголовков и запроса к нижнему регистру
+        query_lower = query.lower()
+        filtered_books = [
+            book for book in books
+            if query_lower in book['title'].lower()
+        ]
 
         conn.close()
-        return books
-    except Exception as e:
-        return []
+        return filtered_books
 
+    except Exception as e:
+        print(f"Произошла ошибка при выполнении поиска: {e}")
+        return []
 
 def main():
     global message_history, active_dialogs
@@ -734,11 +738,6 @@ def main():
     application.add_handler(CommandHandler("clearpredl", clear_suggestions_by_user))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_reply_callback, pattern=r"^reply_"))
-
-    application.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
-        handle_admin_message
-    ))
 
     application.add_handler(MessageHandler(
         filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
