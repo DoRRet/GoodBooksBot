@@ -115,6 +115,7 @@ active_dialogs = {}
 message_history = load_message_history()
 anonymous_messages = load_anonymous_messages()
 suggestions = load_suggestions()
+book_titles = {}
 is_recording_user = {}
 is_recording_admin = False
 is_admin_reply_mode = False
@@ -281,7 +282,9 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
     if books:
         for index, book in enumerate(books, start=1):
             buttons = [
-                [InlineKeyboardButton(f"Купить книгу {index}", url=f"tg://user?id={ADMIN_CHAT_ID}")]
+                [InlineKeyboardButton("Купить на Авито", callback_data=f"buy_avito_{book['id']}")],
+                [InlineKeyboardButton("Купить на Озон", callback_data=f"buy_ozon_{book['id']}")],
+                [InlineKeyboardButton("Купить на Вайлдберриз", callback_data=f"buy_wb_{book['id']}")]
             ]
             reply_markup = InlineKeyboardMarkup(buttons)
             try:
@@ -313,6 +316,47 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
             chat_id=update.effective_chat.id,
             text="Книги не найдены. Введите название книги для нового поиска или нажмите 'Назад ⬅️'."
         )
+
+
+async def button_click_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = query.from_user
+    data = query.data
+
+    if data.startswith("buy_"):
+        platform, book_id = data.split('_')[1:3]
+        platform_name = {
+            "avito": "Авито",
+            "ozon": "Озон",
+            "wb": "Вайлдберриз"
+        }[platform]
+
+        # Получаем полное название книги из словаря
+        book_title = book_titles.get(int(book_id), "неизвестная книга")
+
+        # Запись в историю сообщений
+        if user.id not in message_history:
+            message_history[user.id] = []
+        message_history[user.id].append({
+            "from": user.id,
+            "text": f"Просит ссылку на книгу '{book_title}' на платформе {platform_name}",
+            "timestamp": update.callback_query.message.date.isoformat()
+        })
+        save_message_history()
+
+        # Отметка пользователя как активного
+        if user.id not in user_status['active_users']:
+            user_status['active_users'].append(user.id)
+            if user.id in user_status['inactive_users']:
+                user_status['inactive_users'].remove(user.id)
+            save_user_status(user_status['active_users'], user_status['inactive_users'])
+
+        # Уведомление администратора
+        admin_message = f"Пользователь @{user.username} (ID: {user.id}) выбрал покупку книги '{book_title}' на {platform_name}."
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
+
+        # Ответ пользователю
+        await query.answer(f"Вы выбрали покупку на {platform_name}. Администратор уведомлен и скоро пришлет ссылку.")
 
 
 
@@ -670,6 +714,7 @@ async def clear_one_anonymous_message(update: Update, context: CallbackContext):
 
 SEARCH_BOOK = 1
 def search_books(query):
+    global book_titles
     try:
         conn = sqlite3.connect('books.db')
         cursor = conn.cursor()
@@ -696,6 +741,10 @@ def search_books(query):
             book for book in books
             if query_lower in book['title'].lower()
         ]
+
+        # Сохраняем названия книг в глобальный словарь book_titles
+        for book in books:
+            book_titles[book['id']] = book['title']
 
         conn.close()
         return filtered_books
@@ -727,6 +776,7 @@ def main():
     application.add_handler(CommandHandler("clearpredl", clear_suggestions_by_user))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_reply_callback, pattern=r"^reply_"))
+    application.add_handler(CallbackQueryHandler(button_click_handler))
 
     application.add_handler(MessageHandler(
         filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
