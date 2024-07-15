@@ -126,7 +126,7 @@ async def start(update, context):
     context.user_data.pop('awaiting_reply_user_id', None)
     global is_recording_admin, is_admin_reply_mode
     is_recording_admin = False
-    is_admin_reply_mode = False  
+    is_admin_reply_mode = False
 
     await send_welcome_message(update, context, user)
 
@@ -182,10 +182,10 @@ async def handle_message(update: Update, context: CallbackContext):
         context.user_data['awaiting_search_query'] = False
         context.user_data['awaiting_admin_message'] = False
         context.user_data['awaiting_anonymous_suggestion'] = False
-        context.user_data.pop('awaiting_reply_user_id', None)  
+        context.user_data.pop('awaiting_reply_user_id', None)
 
         if user.id == ADMIN_CHAT_ID:
-            is_admin_reply_mode = False 
+            is_admin_reply_mode = False
             await show_admin_menu(update, context)
         else:
             await show_main_menu(update, context)
@@ -216,6 +216,13 @@ async def handle_message(update: Update, context: CallbackContext):
     if text.lower() == "👋 позвать администратора":
         context.user_data['awaiting_admin_message'] = True
         await update.message.reply_text("Напишите сообщение администратору, скоро он Вам ответит⚡️", reply_markup=reply_markup)
+        return
+
+    if context.user_data.get('awaiting_admin_message'):
+        context.user_data['awaiting_admin_message'] = False
+        admin_message = f"Сообщение от пользователя @{user.username} (ID: {user.id}):\n{text}"
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
+        await update.message.reply_text("Ваше сообщение отправлено администратору. Он скоро свяжется с вами.", reply_markup=reply_markup)
         return
 
     if text.lower() == "📚 предложка":
@@ -317,9 +324,9 @@ async def handle_admin_message(update: Update, context: CallbackContext):
     if user.id == ADMIN_CHAT_ID:
         if text.lower() == "назад ⬅️" or text == "/start":
             is_admin_reply_mode = False
-            context.user_data.pop('awaiting_reply_user_id', None)  
+            context.user_data.pop('awaiting_reply_user_id', None)
             await update.message.reply_text("Режим ответа отключен.", reply_markup=ReplyKeyboardMarkup([["Меню администратора"]], resize_keyboard=True))
-            await show_admin_menu(update, context)  
+            await show_admin_menu(update, context)
             return
 
         if is_admin_reply_mode:
@@ -381,7 +388,7 @@ async def notify_admin(update: Update, context: CallbackContext):
     )
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
     user_admin_chat[user.id] = ADMIN_CHAT_ID
-    active_dialogs[user.id] = True 
+    active_dialogs[user.id] = True
 
 async def send_random_meme(update: Update, context: CallbackContext):
     meme_folder = '/home/LeoLorenco/GoodBooksBot/memes'
@@ -516,7 +523,7 @@ async def show_users(update: Update, context: CallbackContext):
     active_users_message = "Активные пользователи:\n"
     inactive_users_message = "Неактивные пользователи:\n"
 
-    user_status = load_user_status() 
+    user_status = load_user_status()
 
     for user_id in user_status['active_users']:
         user_info = await context.bot.get_chat(user_id)
@@ -699,9 +706,9 @@ def search_books(query):
 
 def main():
     global message_history, active_dialogs
-    load_message_history()  
-    load_anonymous_messages() 
-    load_suggestions() 
+    load_message_history()
+    load_anonymous_messages()
+    load_suggestions()
 
     application = Application.builder().token(TOKEN).build()
 
