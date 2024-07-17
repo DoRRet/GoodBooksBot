@@ -4,7 +4,7 @@ import sqlite3
 import telegram
 import random
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, InputMediaPhoto, InputMediaVideo, InputMediaAnimation
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 
 load_dotenv()
@@ -166,7 +166,8 @@ SEARCH_BOOK = "SEARCH_BOOK"
 
 async def handle_message(update: Update, context: CallbackContext):
     user = update.message.from_user
-    text = update.message.text
+    message = update.message
+    text = message.text if message.text else ""
     global user_status, is_admin_reply_mode
 
     if context.user_data.get('ignore_next_message'):
@@ -227,7 +228,7 @@ async def handle_message(update: Update, context: CallbackContext):
             user_status['inactive_users'].remove(user.id)
         save_user_status(user_status['active_users'], user_status['inactive_users'])
 
-        # Сохранение сообщения в историю пользователя
+        # Save user message history
         if user.id not in message_history:
             message_history[user.id] = []
         message_history[user.id].append({
@@ -237,7 +238,7 @@ async def handle_message(update: Update, context: CallbackContext):
         })
         save_message_history()
 
-        # Сохранение сообщения в историю админа
+        # Save admin message history
         if ADMIN_CHAT_ID not in message_history:
             message_history[ADMIN_CHAT_ID] = []
         message_history[ADMIN_CHAT_ID].append({
@@ -254,18 +255,51 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if text.lower() == "📚 предложка":
         context.user_data['awaiting_suggestion'] = True
-        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото и название книги, а мы постараемся, что бы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
+        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото и название книги, а мы постараемся, чтобы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
         return
 
     if context.user_data.get('awaiting_suggestion'):
         context.user_data['awaiting_suggestion'] = False
-        suggestions[user.id] = suggestions.get(user.id, []) + [{"from": user.username, "text": text}]
-        save_suggestions()
-        await context.bot.send_message(
-            chat_id=ADMIN_CHAT_ID,
-            text=f"Новое предложение от пользователя @{user.username} (ID: {user.id}):\n{text}"
-        )
-        await update.message.reply_text("Спасибо, мы обязательно присмотримся к Вашему предложению🤝Если Вы хотите добавить еще позицию, то вернитесь в меню и заново выберете «Предложка📚».  Хорошего дня 😊", reply_markup=reply_markup)
+        media = None
+        caption = message.caption if message.caption else ""
+
+        if message.photo:
+            media = InputMediaPhoto(media=message.photo[-1].file_id, caption=caption)
+        elif message.video:
+            media = InputMediaVideo(media=message.video.file_id, caption=caption)
+        elif message.animation:
+            media = InputMediaAnimation(media=message.animation.file_id, caption=caption)
+
+        if media:
+            # Sending the initial /start message
+            await context.bot.send_message(
+                chat_id=-1002202522158,
+                text="/start@good_books_russia_bot"
+            )
+            # Check if media is an animation and handle separately
+            if isinstance(media, InputMediaAnimation):
+                await context.bot.send_animation(
+                    chat_id=-1002202522158,
+                    animation=media.media,
+                    caption=media.caption
+                )
+            else:
+                await context.bot.send_media_group(
+                    chat_id=-1002202522158,
+                    media=[media]
+                )
+            await update.message.reply_text("Спасибо, мы обязательно присмотримся к Вашему предложению🤝 Если Вы хотите добавить еще позицию, то вернитесь в меню и заново выберете «Предложка📚». Хорошего дня 😊", reply_markup=reply_markup)
+        else:
+            # Sending the initial /start message
+            await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text="/start@good_books_russia_bot"
+            )
+            await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text=f"Новое предложение от пользователя @{user.username} (ID: {user.id}):\n{text}"
+            )
+            await update.message.reply_text("Спасибо, мы обязательно присмотримся к Вашему предложению🤝 Если Вы хотите добавить еще позицию, то вернитесь в меню и заново выберете «Предложка📚». Хорошего дня 😊", reply_markup=reply_markup)
         return
 
     if text.lower() == "✍️ анонимное предложение/жалоба":
@@ -277,6 +311,11 @@ async def handle_message(update: Update, context: CallbackContext):
         context.user_data['awaiting_anonymous_suggestion'] = False
         anonymous_messages.append(text)
         save_anonymous_messages()
+        # Sending the initial /start message
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text="/start@good_books_russia_bot"
+        )
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=f"Анонимное предложение/жалоба:\n{text}"
@@ -852,8 +891,23 @@ def main():
         handle_message
     ))
 
-    application.run_polling()
+    application.add_handler(MessageHandler(
+        filters.PHOTO & filters.ChatType.PRIVATE,
+        handle_message
+    ))
 
+    application.add_handler(MessageHandler(
+        filters.VIDEO & filters.ChatType.PRIVATE,
+        handle_message
+    ))
+
+    application.add_handler(MessageHandler(
+        filters.ANIMATION & filters.ChatType.PRIVATE,
+        handle_message
+    ))
+
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
+
