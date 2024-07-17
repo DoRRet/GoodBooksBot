@@ -17,7 +17,6 @@ SEARCH_BOOK = "SEARCH_BOOK"
 
 HISTORY_FILE = 'message_history.json'
 ANON_FILE = 'anonymous_messages.json'
-SUGGESTIONS_FILE = 'suggestions.json'
 USER_STATUS_FILE = 'user_status.json'
 
 def load_message_history():
@@ -61,27 +60,6 @@ def save_anonymous_messages():
     except IOError as e:
         print(f"Ошибка при записи файла {ANON_FILE}: {e}")
 
-def load_suggestions():
-    try:
-        if os.path.exists(SUGGESTIONS_FILE):
-            with open(SUGGESTIONS_FILE, 'r', encoding='utf-8') as file:
-                loaded_suggestions = json.load(file)
-                return {int(key): value for key, value in loaded_suggestions.items()}
-        else:
-            print(f"Файл {SUGGESTIONS_FILE} не найден.")
-            return {}
-    except json.JSONDecodeError as e:
-        print(f"Ошибка декодирования JSON в файле {SUGGESTIONS_FILE}: {e}")
-        return {}
-
-def save_suggestions():
-    try:
-        with open(SUGGESTIONS_FILE, 'w', encoding='utf-8') as file:
-            json.dump({str(key): value for key, value in suggestions.items()}, file, ensure_ascii=False, indent=4)
-        print("Предложения сохранены.")
-    except IOError as e:
-        print(f"Ошибка при записи файла {SUGGESTIONS_FILE}: {e}")
-
 def load_user_status():
     default_status = {"active_users": [], "inactive_users": []}
     if not os.path.exists(USER_STATUS_FILE):
@@ -114,7 +92,6 @@ user_admin_chat = {}
 active_dialogs = {}
 message_history = load_message_history()
 anonymous_messages = load_anonymous_messages()
-suggestions = load_suggestions()
 book_titles = {}
 is_recording_user = {}
 is_recording_admin = False
@@ -255,51 +232,31 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if text.lower() == "📚 предложка":
         context.user_data['awaiting_suggestion'] = True
-        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото и название книги, а мы постараемся, чтобы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
+        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото (ОБЯЗАТЕЬНО СЖАТОЕ, поставить галочку при отправке) и название книги, а мы постараемся, чтобы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
         return
 
     if context.user_data.get('awaiting_suggestion'):
         context.user_data['awaiting_suggestion'] = False
-        media = None
-        caption = message.caption if message.caption else ""
 
-        if message.photo:
-            media = InputMediaPhoto(media=message.photo[-1].file_id, caption=caption)
-        elif message.video:
-            media = InputMediaVideo(media=message.video.file_id, caption=caption)
-        elif message.animation:
-            media = InputMediaAnimation(media=message.animation.file_id, caption=caption)
+        info_message = (
+            f"Предложение от @{user.username}:\n"
+            f"ID пользователя: {user.id}\n"
+            #f"ID сообщения: {message.message_id}\n"
+        )
 
-        if media:
-            # Sending the initial /start message
-            await context.bot.send_message(
-                chat_id=-1002202522158,
-                text="/start@good_books_russia_bot"
-            )
-            # Check if media is an animation and handle separately
-            if isinstance(media, InputMediaAnimation):
-                await context.bot.send_animation(
-                    chat_id=-1002202522158,
-                    animation=media.media,
-                    caption=media.caption
-                )
-            else:
-                await context.bot.send_media_group(
-                    chat_id=-1002202522158,
-                    media=[media]
-                )
-            await update.message.reply_text("Спасибо, мы обязательно присмотримся к Вашему предложению🤝 Если Вы хотите добавить еще позицию, то вернитесь в меню и заново выберете «Предложка📚». Хорошего дня 😊", reply_markup=reply_markup)
+        if message.text:
+            info_message += f"Текст: {message.text}"
+            await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=info_message)
         else:
-            # Sending the initial /start message
-            await context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text="/start@good_books_russia_bot"
-            )
-            await context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=f"Новое предложение от пользователя @{user.username} (ID: {user.id}):\n{text}"
-            )
-            await update.message.reply_text("Спасибо, мы обязательно присмотримся к Вашему предложению🤝 Если Вы хотите добавить еще позицию, то вернитесь в меню и заново выберете «Предложка📚». Хорошего дня 😊", reply_markup=reply_markup)
+            await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=info_message)
+            await context.bot.forward_message(chat_id=ADMIN_CHAT_ID, from_chat_id=message.chat_id, message_id=message.message_id)
+
+        await update.message.reply_text(
+            "Спасибо, мы обязательно присмотримся к Вашему предложению🤝❤️\n"
+            "Если Вы хотите добавить еще позицию, нажмите на 'Предложка' заново и отправьте сообщение)\n"
+            "Хорошего дня 😊",
+            reply_markup=reply_markup
+        )
         return
 
     if text.lower() == "✍️ анонимное предложение/жалоба":
@@ -309,19 +266,14 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if context.user_data.get('awaiting_anonymous_suggestion'):
         context.user_data['awaiting_anonymous_suggestion'] = False
-        anonymous_messages.append(text)
+        anonymous_message = update.message.text
+        anonymous_messages.append(anonymous_message)
         save_anonymous_messages()
-        # Sending the initial /start message
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
-            text="/start@good_books_russia_bot"
+            text=f"Анонимное предложение/жалоба:\n{anonymous_message}"
         )
-        await context.bot.send_message(
-            chat_id=ADMIN_CHAT_ID,
-            text=f"Анонимное предложение/жалоба:\n{text}"
-        )
-        await update.message.reply_text("Ваше сообщение отправлено✅", reply_markup=reply_markup)
-        return
+        await update.message.reply_text("Ваше сообщение отправлено✅")
 
     if user.id in active_dialogs and active_dialogs[user.id] == SEARCH_BOOK:
         await handle_search_query(update, context, text)
@@ -571,10 +523,6 @@ async def show_help(update: Update, context: CallbackContext):
         "/anon - Показать анонимные сообщения\n"
         "/clearanonall - Очистить все анонимные сообщения\n"
         "/clearanon <номер> - Удалить одно анонимное сообщение по номеру\n"
-        "/predl - Показать все предложения\n"
-        "/clearallpredl - Очистить все предложения\n"
-        "/clearonepredl <номер> - Удалить одно предложение по номеру\n"
-        "/clearpredl <user_id> - Очистить предложения пользователя\n"
     )
     await update.message.reply_text(help_message)
 
@@ -590,53 +538,6 @@ async def show_admin_menu(update: Update, context: CallbackContext):
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
 
     await update.message.reply_text("Меню администратора:", reply_markup=reply_markup)
-
-
-async def show_suggestions(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_CHAT_ID:
-        await update.message.reply_text("Эта команда доступна только для администратора.")
-        return
-
-    if suggestions:
-        suggestions_message = "\n\n".join([f"Пользователь {user_id} (@{suggestion['from']}): {suggestion['text']}"
-                                           for user_id, user_suggestions in suggestions.items()
-                                           for suggestion in user_suggestions])
-        await update.message.reply_text(f"Предложения:\n{suggestions_message}")
-    else:
-        await update.message.reply_text("Предложений нет.")
-
-async def clear_all_suggestions(update: Update, context: CallbackContext):
-    global suggestions
-    suggestions.clear()
-    save_suggestions()
-    await update.message.reply_text("Все предложения удалены.")
-
-async def clear_suggestion_by_number(update: Update, context: CallbackContext):
-    global suggestions
-    try:
-        suggestion_number = int(context.args[0])
-        for user_id in suggestions:
-            if len(suggestions[user_id]) >= suggestion_number:
-                del suggestions[user_id][suggestion_number - 1]
-                save_suggestions()
-                await update.message.reply_text(f"Предложение номер {suggestion_number} удалено.")
-                return
-        await update.message.reply_text(f"Предложение номер {suggestion_number} не найдено.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Использование: /clearonepredl <номер предложения>")
-
-async def clear_suggestions_by_user(update: Update, context: CallbackContext):
-    global suggestions
-    try:
-        user_id = int(context.args[0])
-        if user_id in suggestions:
-            del suggestions[user_id]
-            save_suggestions()
-            await update.message.reply_text(f"Все предложения от пользователя {user_id} удалены.")
-        else:
-            await update.message.reply_text(f"Пользователь с ID {user_id} не найден.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Использование: /clearpredl <id пользователя>")
 
 async def close_dialog_command(update: Update, context: CallbackContext, user_id: str):
     global user_status
@@ -860,7 +761,6 @@ def main():
     global message_history, active_dialogs
     load_message_history()
     load_anonymous_messages()
-    load_suggestions()
 
     application = Application.builder().token(TOKEN).build()
 
@@ -873,10 +773,6 @@ def main():
     application.add_handler(CommandHandler("anon", show_anonymous_messages))
     application.add_handler(CommandHandler("clearanonall", clear_anonymous_messages))
     application.add_handler(CommandHandler("clearanon", clear_one_anonymous_message))
-    application.add_handler(CommandHandler("predl", show_suggestions))
-    application.add_handler(CommandHandler("clearallpredl", clear_all_suggestions))
-    application.add_handler(CommandHandler("clearonepredl", clear_suggestion_by_number))
-    application.add_handler(CommandHandler("clearpredl", clear_suggestions_by_user))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_reply_callback, pattern=r"^reply_"))
     application.add_handler(CallbackQueryHandler(button_click_handler))

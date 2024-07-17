@@ -1,8 +1,7 @@
 {
     "active_users": [
-        812060709
-    ],
-    "inactive_users": [
+        812060709,
         7225023702
-    ]
+    ],
+    "inactive_users": []
 }
