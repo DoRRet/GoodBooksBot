@@ -4,12 +4,12 @@ import sqlite3
 import telegram
 import random
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, InputMediaPhoto, InputMediaVideo, InputMediaAnimation
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
-ADMIN_CHAT_ID = 808174847
+ADMIN_CHAT_ID = 6984945831
 SEARCH_BOOK = "SEARCH_BOOK"
 # 808174847 м
 # 6984945831 т
@@ -232,7 +232,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if text.lower() == "📚 предложка":
         context.user_data['awaiting_suggestion'] = True
-        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото (ОБЯЗАТЕЬНО СЖАТОЕ, поставить галочку при отправке) и название книги, а мы постараемся, чтобы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
+        await update.message.reply_text("Мы рады, что у Вас есть предложение к нам!) Пришлите фото и название книги, а мы постараемся, чтобы она в скором времени поступила в продажу ❤️", reply_markup=reply_markup)
         return
 
     if context.user_data.get('awaiting_suggestion'):
@@ -274,6 +274,7 @@ async def handle_message(update: Update, context: CallbackContext):
             text=f"Анонимное предложение/жалоба:\n{anonymous_message}"
         )
         await update.message.reply_text("Ваше сообщение отправлено✅")
+        return
 
     if user.id in active_dialogs and active_dialogs[user.id] == SEARCH_BOOK:
         await handle_search_query(update, context, text)
@@ -292,55 +293,63 @@ async def handle_search_query(update: Update, context: CallbackContext, query: s
     books = search_books(query)
 
     buttons = [
-        ["Назад ⬅️"]
+        [InlineKeyboardButton(book['title'], callback_data=f"select_book_{book['id']}")] for book in books
     ]
-    reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
 
     if books:
-        for index, book in enumerate(books, start=1):
-            buttons = [
-                [InlineKeyboardButton("Купить на Авито", callback_data=f"buy_avito_{book['id']}")],
-                [InlineKeyboardButton("Купить на Озон", callback_data=f"buy_ozon_{book['id']}")],
-                [InlineKeyboardButton("Купить на Вайлдберриз", callback_data=f"buy_wb_{book['id']}")]
-            ]
-            reply_markup = InlineKeyboardMarkup(buttons)
-            try:
-                if book["image_url"]:
-                    await context.bot.send_photo(
-                        chat_id=update.effective_chat.id,
-                        photo=book["image_url"],
-                        caption=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}",
-                        reply_markup=reply_markup
-                    )
-                else:
-                    await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото отсутствует)",
-                        reply_markup=reply_markup
-                    )
-            except telegram.error.BadRequest:
-                await context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"{index}. 📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото не найдено)",
-                    reply_markup=reply_markup
-                )
+        reply_markup = InlineKeyboardMarkup(buttons)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Поиск завершен. Введите название книги для нового поиска или нажмите 'Назад ⬅️'."
+            text="Найденные книги (только название и цена):",
+            reply_markup=reply_markup
         )
     else:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Книги не найдены. Введите название книги для нового поиска или нажмите 'Назад ⬅️'."
+            text="Книги не найдены. Введите название книги для нового поиска."
         )
 
+async def show_book_details(update: Update, context: CallbackContext, book_id: int):
+    book = get_book_by_id(book_id)
+
+    if book:
+        buttons = [
+            [InlineKeyboardButton("Купить на Авито", callback_data=f"buy_avito_{book['id']}")],
+            [InlineKeyboardButton("Купить на Озон", callback_data=f"buy_ozon_{book['id']}")],
+            [InlineKeyboardButton("Купить на Вайлдберриз", callback_data=f"buy_wb_{book['id']}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+
+        if book["image_url"]:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=book["image_url"],
+                caption=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}",
+                reply_markup=reply_markup
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"📚 {book['title']}\n💰 Цена: {book['price']}\n📦 Наличие: {book['availability']}\n(Фото отсутствует)",
+                reply_markup=reply_markup
+            )
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Информация о книге не найдена."
+        )
 
 async def button_click_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     user = query.from_user
     data = query.data
 
-    if data.startswith("buy_"):
+    if data.startswith("select_book_"):
+        book_id = int(data.split('_')[2])
+        await show_book_details(update, context, book_id)
+        await query.answer()
+
+    elif data.startswith("buy_"):
         platform, book_id = data.split('_')[1:3]
         platform_name = {
             "avito": "Авито",
@@ -364,16 +373,20 @@ async def button_click_handler(update: Update, context: CallbackContext):
         # Отметка пользователя как активного
         if user.id not in user_status['active_users']:
             user_status['active_users'].append(user.id)
-            if user.id in user_status['inactive_users']:
-                user_status['inactive_users'].remove(user.id)
-            save_user_status(user_status['active_users'], user_status['inactive_users'])
+        if user.id in user_status['inactive_users']:
+            user_status['inactive_users'].remove(user.id)
+        save_user_status(user_status['active_users'], user_status['inactive_users'])
 
         # Уведомление администратора
         admin_message = f"Пользователь @{user.username} (ID: {user.id}) выбрал покупку книги '{book_title}' на {platform_name}."
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
 
         # Ответ пользователю
-        await query.answer(f"Вы выбрали покупку на {platform_name}. Администратор уведомлен и скоро пришлет ссылку.")
+        user_message = f"Вы выбрали покупку на {platform_name}. Администратор уведомлен и скоро пришлет ссылку."
+        await context.bot.send_message(chat_id=user.id, text=user_message)
+
+        # Закрытие уведомления
+        await query.answer()
 
 
 
@@ -757,6 +770,36 @@ def search_books(query):
         print(f"Произошла ошибка при выполнении поиска: {e}")
         return []
 
+def get_book_by_id(book_id):
+    try:
+        conn = sqlite3.connect('books.db')
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT id, title, price, image_url, availability
+            FROM Book
+            WHERE id = ?
+        """, (book_id,))
+
+        row = cursor.fetchone()
+        if row:
+            book = {
+                "id": row[0],
+                "title": row[1],
+                "price": row[2],
+                "image_url": row[3],
+                "availability": row[4]
+            }
+            conn.close()
+            return book
+        else:
+            conn.close()
+            return None
+
+    except Exception as e:
+        print(f"Произошла ошибка при получении информации о книге: {e}")
+        return None
+
 def main():
     global message_history, active_dialogs
     load_message_history()
@@ -776,6 +819,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_reply_callback, pattern=r"^reply_"))
     application.add_handler(CallbackQueryHandler(button_click_handler))
+    application.add_handler(CallbackQueryHandler(show_book_details, pattern=r"^show_"))
 
     application.add_handler(MessageHandler(
         filters.TEXT & filters.ChatType.PRIVATE & filters.User(ADMIN_CHAT_ID),
@@ -806,4 +850,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
