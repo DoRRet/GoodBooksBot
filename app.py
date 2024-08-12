@@ -3,20 +3,8 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from logging.handlers import RotatingFileHandler
 import logging
-from flask_httpauth import HTTPTokenAuth
 
 app = Flask(__name__)
-
-# Настройка токен-аутентификации
-auth = HTTPTokenAuth(scheme='Bearer')
-
-# Единственный пароль, который должен быть известен пользователям
-VALID_PASSWORD = "password123"  # Замените на ваш пароль
-
-@auth.verify_token
-def verify_token(token):
-    # Проверяем, соответствует ли введенный пользователем пароль заданному
-    return token == VALID_PASSWORD
 
 # Настройка пути к базе данных
 db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'books.db')
@@ -54,7 +42,6 @@ def sclite(query, books):
 
 # Главная страница для отображения всех книг и поиска
 @app.route('/', methods=['GET', 'POST'])
-@auth.login_required  # Добавляем аутентификацию на этот маршрут
 def index():
     if request.method == 'POST':
         search_query = request.form.get('query', '')
@@ -69,7 +56,6 @@ def index():
 
 # Страница для добавления новой книги (форма)
 @app.route('/add_book', methods=['GET', 'POST'])
-@auth.login_required  # Добавляем аутентификацию на этот маршрут
 def add_book_form():
     if request.method == 'POST':
         try:
@@ -91,7 +77,6 @@ def add_book_form():
 
 # Страница для редактирования книги (форма)
 @app.route('/edit_book/<int:book_id>', methods=['GET', 'POST'])
-@auth.login_required  # Добавляем аутентификацию на этот маршрут
 def edit_book_form(book_id):
     book = Book.query.get(book_id)
     if request.method == 'POST':
@@ -111,7 +96,6 @@ def edit_book_form(book_id):
 
 # Обработка запроса для удаления книги
 @app.route('/delete_book/<int:book_id>', methods=['POST'])
-@auth.login_required  # Добавляем аутентификацию на этот маршрут
 def delete_book(book_id):
     try:
         book = Book.query.get(book_id)
