@@ -6,77 +6,104 @@
     <title>Добавление книги</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
-            margin: 20px;
+            font-family: 'Arial', sans-serif;
+            background: #f5f3f0; /* светлый бежевый фон */
+            color: #4a3f3b; /* тёмный коричневый текст */
+            margin: 0;
+            padding: 20px;
         }
         h2 {
-            color: #333;
+            color: #4a3f3b;
             text-align: center;
             margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: 700;
         }
         form {
-            max-width: 400px;
+            max-width: 600px;
             margin: 0 auto;
-            background-color: #fff;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         label {
             display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
         input[type="text"], select {
             width: calc(100% - 12px);
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #b89b82; /* светло-коричневый */
+            border-radius: 6px;
             box-sizing: border-box;
+            background: #fff;
+            font-size: 1rem;
         }
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background: url('data:image/svg+xml;utf8,<svg fill="#333" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><polygon points="0,5 10,15 20,5"></polygon></svg>') no-repeat;
-            background-position: right 10px top 50%;
-            background-size: 12px;
-            padding-right: 30px;
-            text-indent: 0.01px;
-            text-overflow: '';
+        img {
+            max-width: 100%;
+            display: none;
+            margin-top: 10px;
+            border-radius: 6px;
         }
-        input[type="submit"] {
-            background-color: #007bff;
+        input[type="submit"], button {
+            background: #a87d6c; /* средний коричневый */
             color: white;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            transition: background-color 0.3s, transform 0.3s;
         }
-        input[type="submit"]:hover {
-            background-color: #0056b3;
+        input[type="submit"]:hover, button:hover {
+            background: #8c5e3b; /* темный коричневый */
+            transform: scale(1.05);
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a87d6c; /* средний коричневый */
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #8c5e3b; /* темный коричневый */
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <h2>Добавление новой книги</h2>
-    <form action="/add_book" method="post">
-        <label>Название:</label><br>
-        <input type="text" name="title" required><br><br>
-        <label>Цена:</label><br>
-        <input type="text" name="price" required><br><br>
-        <label>Изображение:</label><br>
-        <input type="text" name="image_url" required><br><br>
-        <label>Наличие:</label><br>
-        <select name="availability" required>
-            <option value="available">В наличии</option>
-            <option value="out_of_stock">Нет в наличии</option>
-        </select><br><br>
+    <form id="book-form" action="/add_book" method="post">
+        <label for="title">Название:</label>
+        <input type="text" id="title" name="title" required><br>
+        <label for="price">Цена:</label>
+        <input type="text" id="price" name="price" required><br>
+        <label for="image_url">URL изображения:</label>
+        <input type="text" id="image_url" name="image_url" oninput="previewImage()"><br>
+        <img id="file_preview" src="" alt="Предварительный просмотр">
+        <label for="availability">Наличие:</label>
+        <select id="availability" name="availability" required>
+            <option value="В наличии">В наличии</option>
+            <option value="Нет в наличии">Нет в наличии</option>
+        </select><br>
         <input type="submit" value="Добавить книгу">
     </form>
+    <a href="/">Вернуться на главную</a>
+
+    <script>
+    function previewImage() {
+        var input = document.getElementById('image_url');
+        var preview = document.getElementById('file_preview');
+        var url = input.value;
+        preview.src = url;
+        preview.style.display = url ? 'block' : 'none';
+    }
+    </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
-import os
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from logging.handlers import RotatingFileHandler
 import logging
+import os
 
 app = Flask(__name__)
 
@@ -30,39 +30,52 @@ if not app.debug:
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    price = db.Column(db.String(20), nullable=False)
+    price = db.Column(db.Float, nullable=False)
     image_url = db.Column(db.String(255))
     availability = db.Column(db.String(50), nullable=False)
 
-# Функция поиска книг по запросу
-def sclite(query, books):
-    query = query.lower()
-    matching_books = [book for book in books if query in book.title.lower()]
-    return matching_books
-
-# Главная страница для отображения всех книг и поиска
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == 'POST':
-        search_query = request.form.get('query', '')
-        if search_query:
-            books = sclite(search_query, Book.query.all())
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 10  # Количество книг на одной странице
+
+        if request.method == 'POST':
+            search_query = request.form.get('query', '').lower()  # Приведение запроса к нижнему регистру
         else:
-            books = Book.query.all()
-    else:
-        books = Book.query.all()
+            search_query = request.args.get('query', '').lower()  # Приведение запроса к нижнему регистру
 
-    return render_template('index.html', books=books)
+        min_price = request.args.get('min_price', type=float)
+        max_price = request.args.get('max_price', type=float)
+        availability = request.args.get('availability', '')
 
-# Страница для добавления новой книги (форма)
+        books_query = Book.query
+
+        if search_query:
+            books_query = books_query.filter(Book.title.ilike(f'%{search_query}%'))
+        if min_price is not None:
+            books_query = books_query.filter(Book.price >= min_price)
+        if max_price is not None:
+            books_query = books_query.filter(Book.price <= max_price)
+        if availability:
+            books_query = books_query.filter(Book.availability == availability)
+
+        pagination = books_query.paginate(page=page, per_page=per_page, error_out=False)
+        books = pagination.items
+        return render_template('index.html', books=books, pagination=pagination, query=search_query, min_price=min_price, max_price=max_price, availability=availability)
+    except Exception as e:
+        app.logger.error(f"Error in index route: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/add_book', methods=['GET', 'POST'])
 def add_book_form():
     if request.method == 'POST':
         try:
             data = request.form
+
             new_book = Book(
                 title=data['title'],
-                price=data['price'],
+                price=float(data['price']),
                 image_url=data['image_url'],
                 availability=data['availability']
             )
@@ -75,7 +88,6 @@ def add_book_form():
 
     return render_template('edit_book.html', title='Add New Book', action='/add_book', book=None)
 
-# Страница для редактирования книги (форма)
 @app.route('/edit_book/<int:book_id>', methods=['GET', 'POST'])
 def edit_book_form(book_id):
     book = Book.query.get(book_id)
@@ -83,7 +95,7 @@ def edit_book_form(book_id):
         try:
             data = request.form
             book.title = data['title']
-            book.price = data['price']
+            book.price = float(data['price'])
             book.image_url = data['image_url']
             book.availability = data['availability']
             db.session.commit()
@@ -94,7 +106,6 @@ def edit_book_form(book_id):
 
     return render_template('edit_book.html', title='Edit Book', action=f'/edit_book/{book_id}', book=book)
 
-# Обработка запроса для удаления книги
 @app.route('/delete_book/<int:book_id>', methods=['POST'])
 def delete_book(book_id):
     try:

@@ -1,51 +1,44 @@
 import pandas as pd
 import sqlite3
-# pip install xlrd
-# Загрузка данных из Excel
-excel_file = 'tovar.xls'  # Укажите путь к вашему файлу Excel
+
+# Чтение данных из Excel
+excel_file = 'tovar.xlsx'
 df = pd.read_excel(excel_file)
 
-# Оставляем только нужные столбцы: наименование и цена продажи
+# Вывод заголовков столбцов для проверки
+print(df.columns)
+
+# Выбор нужных столбцов
 df = df[['Наименование', 'Цена продажи']]
 
-# Переименуем столбцы для соответствия базе данных
+# Переименование столбцов
 df.columns = ['title', 'price']
 
-
+# Добавление столбцов для наличия и URL изображения
 df['availability'] = 'В наличии'
-
-# Добавляем столбец 'image_url' с пустыми значениями
 df['image_url'] = ""
 
-# Подключение к базе данных SQLite
+# Подключение к базе данных
 conn = sqlite3.connect('books.db')
 cursor = conn.cursor()
 
-# Для каждой строки в DataFrame обновляем или вставляем запись в базу данных
+# Очистка таблицы Books
+cursor.execute("DELETE FROM Book")
+
+# Перебор строк DataFrame и добавление их в базу данных
 for index, row in df.iterrows():
     title = row['title']
     price = row['price']
     availability = row['availability']
     image_url = row['image_url']
 
-    # Проверка на наличие записи с таким же названием
-    cursor.execute("SELECT * FROM Book WHERE title = ?", (title,))
-    result = cursor.fetchone()
+    # Вставка новой записи в таблицу Book
+    cursor.execute(
+        "INSERT INTO Book (title, price, availability, image_url) VALUES (?, ?, ?, ?)",
+        (title, price, availability, image_url)
+    )
 
-    if result:
-        # Если запись существует, обновляем только цену и доступность
-        cursor.execute(
-            "UPDATE Book SET price = ?, availability = ? WHERE title = ?",
-            (price, availability, title)
-        )
-    else:
-        # Если записи нет, вставляем новую строку
-        cursor.execute(
-            "INSERT INTO Book (title, price, availability, image_url) VALUES (?, ?, ?, ?)",
-            (title, price, availability, image_url)
-        )
-
-# Сохранение изменений и закрытие подключения
+# Подтверждение изменений и закрытие соединения с базой данных
 conn.commit()
 conn.close()
 

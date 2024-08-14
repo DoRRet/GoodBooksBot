@@ -1,81 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Редактировать таблицу</title>
+    <title>Редактирование книги</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
-            margin: 20px;
+            font-family: 'Arial', sans-serif;
+            background: #f5f3f0; /* светлый бежевый фон */
+            color: #4a3f3b; /* тёмный коричневый текст */
+            margin: 0;
+            padding: 20px;
         }
-        h1 {
-            color: #333;
+        h2 {
+            color: #4a3f3b;
             text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: 700;
         }
         form {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #fff;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        form label {
+        label {
             display: block;
-            margin-bottom: 10px;
-            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
-        form input[type="text"] {
-            width: calc(100% - 24px);
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+        input[type="text"], select {
+            width: calc(100% - 12px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #b89b82; /* светло-коричневый */
+            border-radius: 6px;
+            box-sizing: border-box;
+            background: #fff;
+            font-size: 1rem;
         }
-        form button {
-            background-color: #007bff;
+        img {
+            max-width: 100%;
+            display: none;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+        input[type="submit"], button {
+            background: #a87d6c; /* средний коричневый */
             color: white;
-            border: none;
             padding: 12px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            border-radius: 4px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            transition: background-color 0.3s, transform 0.3s;
         }
-        form button:hover {
-            background-color: #0056b3;
+        input[type="submit"]:hover, button:hover {
+            background: #8c5e3b; /* темный коричневый */
+            transform: scale(1.05);
         }
         a {
             display: block;
             text-align: center;
             margin-top: 20px;
-            color: #007bff;
+            color: #a87d6c; /* средний коричневый */
             text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
         }
         a:hover {
+            color: #8c5e3b; /* темный коричневый */
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h1>Редактировать таблицу</h1>
-    <form method="POST" action="{{ action }}">
+    <h2>{{ title }}</h2>
+    <form action="{{ action }}" method="post">
         <label for="title">Название:</label>
-        <input type="text" id="title" name="title" value="{{ book.title if book else '' }}" required><br>
+        <input type="text" id="title" name="title" value="{{ book.title }}" required><br>
         <label for="price">Цена:</label>
-        <input type="text" id="price" name="price" value="{{ book.price if book else '' }}" required><br>
+        <input type="text" id="price" name="price" value="{{ book.price }}" required><br>
         <label for="image_url">URL изображения:</label>
-        <input type="text" id="image_url" name="image_url" value="{{ book.image_url if book else '' }}"><br>
-        <label for="availability">Доступность:</label>
-        <input type="text" id="availability" name="availability" value="{{ book.availability if book else '' }}" required><br>
-        <button type="submit">Сохранить</button>
+        <input type="text" id="image_url" name="image_url" value="{{ book.image_url }}" oninput="previewImage()"><br>
+        <img id="file_preview" src="{{ book.image_url }}" alt="Предварительный просмотр">
+        <label for="availability">Наличие:</label>
+        <select id="availability" name="availability" required>
+            <option value="В наличии" {% if book.availability == 'В наличии' %}selected{% endif %}>В наличии</option>
+            <option value="Нет в наличии" {% if book.availability == 'Нет в наличии' %}selected{% endif %}>Нет в наличии</option>
+        </select><br>
+        <input type="submit" value="Сохранить изменения">
     </form>
     <a href="/">Вернуться на главную</a>
+
+    <script>
+    function previewImage() {
+        var input = document.getElementById('image_url');
+        var preview = document.getElementById('file_preview');
+        var url = input.value;
+        preview.src = url;
+        preview.style.display = url ? 'block' : 'none';
+    }
+    </script>
 </body>
 </html>
