@@ -504,7 +504,7 @@ async def notify_admin(update: Update, context: CallbackContext):
     active_dialogs[user.id] = True
 
 async def send_random_meme(update: Update, context: CallbackContext):
-    meme_folder = '/home/LeoLorenco/GoodBooksBot/memes'
+    meme_folder = '/root/GoodBooksBot/memes'
     meme_files = os.listdir(meme_folder)
     meme_file = random.choice(meme_files)
     meme_path = os.path.join(meme_folder, meme_file)
