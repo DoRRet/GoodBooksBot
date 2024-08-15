@@ -1,16 +1,27 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from logging.handlers import RotatingFileHandler
 import logging
 import os
+from werkzeug.utils import secure_filename
+from check_db import update_books_from_excel
 
 app = Flask(__name__)
+
+app.secret_key = b'\xf0\x1d\x19\xa3\xcb\x11\xbc\xe5\xa4\xf4\xcc\x08\xd2\x18\x1f\xcf\x90\x8e\x8c\xa7\x9c\x7f\x88'
 
 # Настройка пути к базе данных
 db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'books.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Папка для загрузки файлов
+app.config['ALLOWED_EXTENSIONS'] = {'xls', 'xlsx'}
 db = SQLAlchemy(app)
+
+# Создание папки для загрузки файлов, если она не существует
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 
 # Настройка логирования
 if not app.debug:
@@ -33,6 +44,35 @@ class Book(db.Model):
     price = db.Column(db.Float, nullable=False)
     image_url = db.Column(db.String(255))
     availability = db.Column(db.String(50), nullable=False)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Новый маршрут для загрузки Excel-файла
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            update_books_from_excel(file_path)  # Обновление данных в базе
+            flash('Файл успешно загружен и обработан.')
+            
+            return redirect(url_for('index'))
+    
+    return render_template('upload.html')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -62,7 +102,11 @@ def index():
 
         pagination = books_query.paginate(page=page, per_page=per_page, error_out=False)
         books = pagination.items
-        return render_template('index.html', books=books, pagination=pagination, query=search_query, min_price=min_price, max_price=max_price, availability=availability)
+
+        # Добавлено для отображения общего количества книг
+        total_books = books_query.count()
+
+        return render_template('index.html', books=books, pagination=pagination, query=search_query, min_price=min_price, max_price=max_price, availability=availability, total_books=total_books)
     except Exception as e:
         app.logger.error(f"Error in index route: {e}")
         return jsonify({'error': str(e)}), 500

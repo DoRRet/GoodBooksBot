@@ -1,82 +1,4 @@
-2024-08-12 21:34:49,129 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-12 23:12:16,259 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:39]
-2024-08-13 19:23:37,961 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 19:23:37,970 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 19:23:38,009 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:27:13,118 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:27:13,146 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:27:13,179 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:43:44,852 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:43:44,895 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-13 22:43:44,916 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 00:00:52,320 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 01:18:48,177 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 04:55:52,244 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:28:04,819 ERROR: Exception on / [POST] [in /usr/lib/python3/dist-packages/flask/app.py:828]
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 49, in index
-    books = sclite(search_query, Book.query.all())
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 40, in sclite
-    matching_books = [book for book in books if query in book.title.lower()]
-                                                         ^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'lower'
-2024-08-14 06:28:15,167 ERROR: Exception on / [POST] [in /usr/lib/python3/dist-packages/flask/app.py:828]
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 49, in index
-    books = sclite(search_query, Book.query.all())
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 40, in sclite
-    matching_books = [book for book in books if query in book.title.lower()]
-                                                         ^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'lower'
-2024-08-14 06:30:12,088 ERROR: Exception on / [POST] [in /usr/lib/python3/dist-packages/flask/app.py:828]
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 49, in index
-    books = sclite(search_query, Book.query.all())
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 40, in sclite
-    matching_books = [book for book in books if query in book.title.lower()]
-                                                         ^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'lower'
-2024-08-14 06:39:54,285 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:28]
-2024-08-14 06:40:00,054 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+2024-08-14 06:40:04,510 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
     response = self.full_dispatch_request()
@@ -94,7 +16,7 @@ Traceback (most recent call last):
     pagination = books_query.paginate(page, per_page, error_out=False)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:40:01,917 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+2024-08-14 06:40:05,463 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
     response = self.full_dispatch_request()
@@ -112,7 +34,7 @@ Traceback (most recent call last):
     pagination = books_query.paginate(page, per_page, error_out=False)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:40:02,851 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+2024-08-14 06:40:24,048 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
     response = self.full_dispatch_request()
@@ -130,7 +52,7 @@ Traceback (most recent call last):
     pagination = books_query.paginate(page, per_page, error_out=False)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:40:03,699 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+2024-08-14 06:45:01,617 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
     response = self.full_dispatch_request()
@@ -145,6 +67,72 @@ Traceback (most recent call last):
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/root/GoodBooksBot/app.py", line 59, in index
+    books = pagination.items
+                 ^^^^^^^^^^^^
+TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
+2024-08-14 06:45:13,602 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 06:45:19,688 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/GoodBooksBot/app.py", line 58, in index
     pagination = books_query.paginate(page, per_page, error_out=False)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
+2024-08-14 06:45:27,847 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/GoodBooksBot/app.py", line 58, in index
+    pagination = books_query.paginate(page, per_page, error_out=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
+2024-08-14 06:49:07,360 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 06:54:28,247 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 06:56:48,377 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 06:58:33,397 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 06:59:34,993 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:01:46,439 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:02:57,314 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:09:08,263 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:09:12,713 ERROR: Error in index route: 'utf-8' codec can't decode byte 0xca in position 153: invalid continuation byte [in /root/GoodBooksBot/app.py:60]
+2024-08-14 07:13:30,545 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:18:01,459 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:19:12,116 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:21:46,121 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:25:00,312 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:27:40,545 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:28:21,409 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:29:32,342 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:31:42,728 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:35:05,315 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:35:32,647 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 07:46:48,913 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 07:47:14,529 ERROR: Error editing book: [Errno 2] No such file or directory: '/root/GoodBooksBot/uploads/25.png' [in /root/GoodBooksBot/app.py:121]
+2024-08-14 07:50:59,737 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 07:55:37,592 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 08:01:06,417 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 08:06:41,894 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 08:06:58,871 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
+2024-08-14 08:14:29,424 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 08:36:48,035 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]

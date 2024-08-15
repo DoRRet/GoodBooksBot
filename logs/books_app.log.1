@@ -1,138 +1,134 @@
-2024-08-14 06:40:04,510 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+2024-08-14 08:36:56,226 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 08:40:14,443 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 08:42:27,061 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 08:50:41,215 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 08:54:11,753 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-14 09:01:41,605 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+2024-08-15 07:11:17,041 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:11:27,386 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:13:23,627 ERROR: Exception on /upload [POST] [in /root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 59, in index
-    pagination = books_query.paginate(page, per_page, error_out=False)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:40:05,463 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+  File "/root/GoodBooksBot/app.py", line 65, in upload_file
+    flash('Файл успешно загружен и обработан.')
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/helpers.py", line 323, in flash
+    session["_flashes"] = flashes
+    ~~~~~~~^^^^^^^^^^^^
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/sessions.py", line 102, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2024-08-15 07:14:09,942 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:18:13,337 ERROR: Exception on /upload [POST] [in /root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 59, in index
-    pagination = books_query.paginate(page, per_page, error_out=False)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:40:24,048 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+  File "/root/GoodBooksBot/app.py", line 65, in upload_file
+    flash('Файл успешно загружен и обработан.')
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/helpers.py", line 323, in flash
+    session["_flashes"] = flashes
+    ~~~~~~~^^^^^^^^^^^^
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/sessions.py", line 102, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2024-08-15 07:24:34,359 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:28:14,804 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:28:39,062 ERROR: Exception on /upload [POST] [in /root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 59, in index
-    pagination = books_query.paginate(page, per_page, error_out=False)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:45:01,617 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+  File "/root/GoodBooksBot/app.py", line 69, in upload_file
+    flash('Файл успешно загружен и обработан.')
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/helpers.py", line 323, in flash
+    session["_flashes"] = flashes
+    ~~~~~~~^^^^^^^^^^^^
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/sessions.py", line 102, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2024-08-15 07:29:56,397 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:36]
+2024-08-15 07:30:21,597 ERROR: Exception on /upload [POST] [in /root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 59, in index
-    books = pagination.items
-                 ^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:45:13,602 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:45:19,688 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
+  File "/root/GoodBooksBot/app.py", line 69, in upload_file
+    flash('Файл успешно загружен и обработан.')
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/helpers.py", line 323, in flash
+    session["_flashes"] = flashes
+    ~~~~~~~^^^^^^^^^^^^
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/sessions.py", line 102, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2024-08-15 07:30:36,571 ERROR: Exception on /upload [POST] [in /root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 58, in index
-    pagination = books_query.paginate(page, per_page, error_out=False)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:45:27,847 ERROR: Exception on / [GET] [in /usr/lib/python3/dist-packages/flask/app.py:828]
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 1463, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 872, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 870, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/flask/app.py", line 855, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/GoodBooksBot/app.py", line 58, in index
-    pagination = books_query.paginate(page, per_page, error_out=False)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Query.paginate() takes 1 positional argument but 3 positional arguments (and 1 keyword-only argument) were given
-2024-08-14 06:49:07,360 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:54:28,247 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:56:48,377 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:58:33,397 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 06:59:34,993 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:01:46,439 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:02:57,314 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:09:08,263 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:09:12,713 ERROR: Error in index route: 'utf-8' codec can't decode byte 0xca in position 153: invalid continuation byte [in /root/GoodBooksBot/app.py:60]
-2024-08-14 07:13:30,545 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:18:01,459 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:19:12,116 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:21:46,121 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:25:00,312 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:27:40,545 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:28:21,409 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:29:32,342 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:31:42,728 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:35:05,315 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:35:32,647 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 07:46:48,913 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 07:47:14,529 ERROR: Error editing book: [Errno 2] No such file or directory: '/root/GoodBooksBot/uploads/25.png' [in /root/GoodBooksBot/app.py:121]
-2024-08-14 07:50:59,737 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 07:55:37,592 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 08:01:06,417 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 08:06:41,894 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 08:06:58,871 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:32]
-2024-08-14 08:14:29,424 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
-2024-08-14 08:36:48,035 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:27]
+  File "/root/GoodBooksBot/app.py", line 69, in upload_file
+    flash('Файл успешно загружен и обработан.')
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/helpers.py", line 323, in flash
+    session["_flashes"] = flashes
+    ~~~~~~~^^^^^^^^^^^^
+  File "/root/GoodBooksBot/venv/lib/python3.12/site-packages/flask/sessions.py", line 102, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2024-08-15 07:32:42,108 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 07:39:43,993 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 07:49:29,930 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 07:54:49,792 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:00:29,272 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:00:56,920 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:02:13,791 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:03:12,782 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:06:20,366 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:19:44,664 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:20:48,422 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]
+2024-08-15 08:25:38,693 INFO: Bookstore application startup [in /root/GoodBooksBot/app.py:38]

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Книжный магазин</title>
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -203,7 +204,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="filter-form">
+<div class="upload-link" style="text-align: center; margin-bottom: 20px;">
+    <form action="/upload" method="get">
+        <button type="submit">Загрузить Excel-файл</button>
+    </form>
+</div>        <div class="filter-form">
             <form method="GET" action="/">
                 <label for="min_price">Минимальная цена:</label>
                 <input type="number" id="min_price" name="min_price" placeholder="0" value="{{ min_price }}">
@@ -230,8 +235,8 @@
         
         {% if books %}
             <div class="search-results">
-                Найдено книг: {{ books|length }}
-            </div>
+    Найдено книг на странице: {{ books|length }} из {{ pagination.total }}.
+</div>
             <table>
                 <thead>
                     <tr>
@@ -251,7 +256,7 @@
                         <td><img src="{{ book.image_url }}" alt="Обложка книги" onclick="openModal('{{ book.image_url }}')"></td>
                         <td class="action-links">
                             <a href="/edit_book/{{ book.id }}">Изменить</a>
-                            <span>|</span>
+
                             <form method="POST" action="/delete_book/{{ book.id }}" onsubmit="return confirm('Вы уверены, что хотите удалить эту книгу?');">
                                 <button type="submit" style="background-color: #d9534f;">Удалить</button>
                             </form>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка файла</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f3f0; /* светлый бежевый фон */
+            color: #4a3f3b; /* тёмный коричневый текст */
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #4a3f3b;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            background: #a87d6c; /* средний коричневый */
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:hover {
+            background: #8c5e3b; /* темный коричневый */
+            transform: scale(1.05);
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .info img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .info p {
+            margin: 0 0 20px;
+        }
+        .info a {
+            background: linear-gradient(135deg, #b89b82, #a87d6c); /* градиент коричневого */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .info a:hover {
+            background: linear-gradient(135deg, #a87d6c, #8c5e3b); /* темнее градиент */
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Загрузка Excel-файла</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xls, .xlsx">
+            <button type="submit">Загрузить и обработать</button>
+        </form>
+        <div class="info">
+            <p>Если файл не загружается, сохраните его в Excel следующим образом:</p>
+            <p>Файл - Сохранить как - КНИГА EXCEL (*.XLSX) и попробуйте загрузить снова.</p>
+            <p>Убедитесь, что поля в файле расположены на тех же местах и с теми же названиями, что указано на примере ниже:</p>
+            <img src="{{ url_for('static', filename='example.jpg') }}" alt="Пример Excel-файла">
+            <a href="{{ url_for('static', filename='example.xlsx') }}" download>Скачать пример файла</a>
+        </div>
+    </div>
+</body>
+</html>
